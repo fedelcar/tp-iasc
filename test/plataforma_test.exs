@@ -2,8 +2,9 @@ defmodule PlataformaTest do
   use ExUnit.Case
 
   setup do
+    {:ok, notification} = GenEvent.start_link
     ets = :ets.new(:ets_name, [:set, :public])
-    {:ok, plataforma} = Plataforma.start_link(ets, [])
+    {:ok, plataforma} = Plataforma.start_link(ets, notification, [])
     {:ok, plataforma: plataforma}
   end
 

@@ -9,12 +9,14 @@ defmodule Plataforma.Supervisor do
   @name_ets ETS
   @name_plataforma Plataforma
   @name_controller Controller
+  @name_notification Notificacion
 
   def init(:ok) do
     ets = :ets.new(@name_ets,
                  [:set, :public, :named_table, {:read_concurrency, true}])
     children = [
-      worker(Plataforma, [ets, [name: @name_plataforma]]),
+      worker(Notificacion, [[name: @name_notification]]),
+      worker(Plataforma, [@name_ets,  @name_notification, [name: @name_plataforma]]),
       worker(:elli, [[port: 3000, callback: @name_controller]])
     ]
 

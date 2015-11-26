@@ -3,6 +3,10 @@ defmodule Plataforma do
 
   ## Client API
 
+  def start_link(ets, notification, opts \\ []) do
+    GenServer.start_link(__MODULE__, {ets, notification}, opts)
+  end
+
   def lookup_subasta(server, name) do
     case GenServer.call(server, {:lookup, {name, :subasta}}) do
       :not_found -> 
@@ -37,40 +41,60 @@ defmodule Plataforma do
 
   ## Server Callbacks
 
-  def start_link(ets, opts \\ []) do
-    GenServer.start_link(__MODULE__, ets, opts)
+  def init({ets, notification}) do
+    {:ok, %{notification: notification, ets: ets}}
   end
 
-  def handle_cast({:create, {key, values}}, ets) do
-    case lookup_ets(ets, key) do
+  def handle_cast({:create, {key, value}}, state) do
+    case lookup_ets(state.ets, key) do
       {:ok, entity} ->
-        {:noreply, ets}
+        {:noreply, state}
       :not_found ->
-        :ets.insert(ets, {key, values})
-        {:noreply, ets}
+        case key do
+          {name, :comprador} ->
+            :ets.insert(state.ets, {key, value})
+            {:noreply, state}
+          {name, :subasta} ->
+            :ets.insert(state.ets, {key, value})
+            compradores = :ets.match(state.ets, {:"_", :"$2"})
+            Enum.map(compradores, 
+              fn(result) -> 
+                case result do
+                  [{comprador}] ->
+                    GenEvent.sync_notify(state.notification, {:new_subasta, name, comprador.name})
+                    :ok
+                  _ -> 
+                    :ok
+                end
+              end
+            )
+
+              
+            {:noreply, state}
+        end
     end
   end
 
-  def handle_call({:lookup, key}, _from, ets) do
-    case lookup_ets(ets, key) do
+  def handle_call({:lookup, key}, _from, state) do
+    case lookup_ets(state.ets, key) do
       {:ok, entity} ->
-        {:reply, {:ok, entity}, ets}
+        {:reply, {:ok, entity}, state}
       :not_found ->
-        {:reply, :not_found, ets}
+        {:reply, :not_found, state}
     end
   end
 
-  def handle_call({:ofertar, {name, price, offerer}}, _from, ets) do
-      case lookup_ets(ets, {name, :subasta}) do
+  def handle_call({:ofertar, {name, price, offerer}}, _from, state) do
+      case lookup_ets(state.ets, {name, :subasta}) do
         {:ok, {_, {subasta}}} ->
           if price <= subasta.price do
-            {:reply, {:bad_request, "La oferta no es lo suficientemente alta"}, ets}
+            {:reply, {:bad_request, "La oferta no es lo suficientemente alta"}, state}
           else
-            update_price(ets, name, price, offerer)
-            {:reply, {:ok, "Oferta aceptada"}, ets}
+            update_price(state.ets, name, price, offerer)
+            {:reply, {:ok, "Oferta aceptada"}, state}
           end
         :not_found ->
-          {:reply, :not_found, ets}
+          {:reply, :not_found, state}
     end
   end
 
