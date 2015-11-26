@@ -11,7 +11,6 @@ defmodule Subasta do
     GenServer.cast(server, {:create, name})
   end
 
-
   ## Server Callbacks
 
   def start_link(ets, opts \\ []) do
