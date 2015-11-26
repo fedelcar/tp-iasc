@@ -18,7 +18,7 @@ defmodule Subasta do
   end
 
   def handle_cast({:create, name}, ets) do
-    case lookup(ets, name) do
+    case lookup_ets(ets, name) do
       {:ok, subasta} ->
         {:noreply, ets}
       :not_found ->
@@ -28,7 +28,7 @@ defmodule Subasta do
   end
 
   def handle_call({:lookup, name}, _from, ets) do
-    case lookup(ets, name) do
+    case lookup_ets(ets, name) do
       {:ok, subasta} ->
         {:reply, {:ok, subasta}, ets}
       :not_found ->
@@ -36,9 +36,9 @@ defmodule Subasta do
     end
   end
 
-  def lookup(ets, name) do
+  def lookup_ets(ets, name) do
     case :ets.lookup(ets, name) do
-      [{^name, subasta}] -> {:ok, subasta}
+      [subasta] -> {:ok, subasta}
       [] -> :not_found
     end
   end
