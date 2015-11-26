@@ -23,19 +23,32 @@ defmodule Controller do
     name = Map.get(map, "name")
     precio_base_str = Map.get(map, "precio_base")
     duracion_str = Map.get(map, "duracion")
-    {duracion, _} = Integer.parse(duracion_str)
-    {precio_base, _} = Integer.parse(precio_base_str)
-    subasta = {{name, :subasta}, {precio_base, duracion}}
-    Subasta.create(Subasta, subasta)
-    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+
+    case {name, precio_base_str, duracion_str} do
+      {nil, _, _} -> {400, [], "Bad Request"}
+      {_, nil, _} -> {400, [], "Bad Request"}
+      {_, _, nil} -> {400, [], "Bad Request"}
+      {name, precio_base_str, duracion_str} ->
+        {duracion, _} = Integer.parse(duracion_str)
+        {precio_base, _} = Integer.parse(precio_base_str)
+        subasta = {{name, :subasta}, {precio_base, duracion}}
+        Subasta.create(Subasta, subasta)
+        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+    end
   end
 
   def handle(:POST, [<<"compradores">>], req) do
     map = parse_body(req)
     name = Map.get(map, "name")
     contacto = Map.get(map, "contacto")
-    Subasta.create(Subasta, {{name, :comprador}, {contacto}})
-    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+
+    case {name, contacto} do
+      {nil, _} -> {400, [], "Bad Request"}
+      {_, nil} -> {400, [], "Bad Request"}
+      {name, contacto} ->
+        Subasta.create(Subasta, {{name, :comprador}, {contacto}})
+        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+    end
   end
 
   def handle(:POST, [<<"crash">>], _req) do
