@@ -31,7 +31,7 @@ defmodule Elli.HTTPRequest do
 
   def post_arg( key,{__MODULE__, elli_req} ),               do: arg_val(:elli_request.post_arg(key,elli_req))
 
-  def post_arg( key,default,{__MODULE__, elli_req} ),       do: arg_val(:elli_request.post_arg(key,default,elli_req))
+  def post_arg( key,default,{__MODULE__, elli_req} ),       do: arg_val(:elli_request.post_arg(key, elli_req, default))
 
   def body_qs( {__MODULE__, elli_req} ),                    do: :elli_request.body_qs(elli_req)
 
