@@ -7,6 +7,12 @@ defmodule Escenario2Test do
     {:ok, subasta: subasta}
   end
 
+
+
+# Similar al escenario anterior, pero antes de terminar la subasta, B oferta un precio mayor,
+# y al cumplirse el plazo, se le adjudica a éste.
+# Obviamente, este proceso de superar la oferta anterior puede repetirse indefinidamente mientras la subasta esté abierta.
+
   test "escenario2", %{subasta: subasta} do
     miguel = Subasta.create(subasta, {{"miguel", :comprador}, {"miguel@miguel.miguel"}})
     jorge = Subasta.create(subasta, {{"jorge", :comprador}, {"jorge@jorge.jorge"}})
