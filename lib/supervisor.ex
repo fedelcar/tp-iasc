@@ -10,9 +10,9 @@ defmodule Subastas.Supervisor do
   @name_controller Controller
 
   def init(:ok) do
-    ets  = :ets.new(table, [:named_table, read_concurrency: true])
+    ets  = :ets.new(:table, [:named_table, read_concurrency: true])
     children = [
-      worker(Subasta, [[ets], [name: @name_subasta]]),
+      worker(Subasta, [ets, [name: @name_subasta]]),
       worker(:elli, [[port: 3000, callback: Controller]])
     ]
 

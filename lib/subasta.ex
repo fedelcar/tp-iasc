@@ -1,28 +1,15 @@
 defmodule Subasta do
   use GenServer
 
-  def start_link(ets, opts \\ []) do
-    GenServer.start_link(__MODULE__, ets, opts)
+  def start_link(state, opts \\ []) do
+    GenServer.start_link(__MODULE__, state, opts)
   end
 
-  def handle_call(:get, _from, nombre) do
-    {:reply, h, ets}
+  def handle_cast({:create, name}, state) do
+    case :ets.lookup(state, name) do
+      [{^name, subasta}] -> {:noreply, state}
+      [] -> {:noreply, state}
+    end 
   end
 
-  def handle_cast({:create, name}, ets) do
-    :ets.lookup(ets, name)
-      {:ok, subasta} ->
-        {:noreply, ets}
-      :error ->
-        :ets.insert(ets, {name})
-        {:noreply, ets}
-    end
-  end
-
-  def lookup(table, name) do
-    case :ets.lookup(table, name) do
-      [{^name, bucket}] -> {:ok, bucket}
-      [] -> :error
-    end
-  end
 end
