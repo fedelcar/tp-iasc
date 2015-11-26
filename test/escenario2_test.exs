@@ -25,15 +25,21 @@ defmodule Escenario2Test do
 # Obviamente, este proceso de superar la oferta anterior puede repetirse indefinidamente mientras la subasta esté abierta.
 
   test "escenario2", %{plataforma: plataforma} do
-    Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
+    Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "se vende heladera", "john snow"}
-    assert_receive {:new_subasta, "se vende heladera", "arya stark"}
+    assert_receive {:new_subasta, "arya stark", "se vende heladera"}
+    assert_receive {:new_subasta, "john snow", "se vende heladera"}
 
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
+    assert_receive {:oferta_aceptada, "john snow", "se vende heladera", 15}
+    assert_receive {:oferta, "arya stark", "se vende heladera", 15, "john snow"}
+
     Plataforma.ofertar(plataforma, "se vende heladera", 200, "arya stark")
+    assert_receive {:oferta_aceptada, "arya stark", "se vende heladera", 200}
+    assert_receive {:oferta, "john snow", "se vende heladera", 200, "arya stark"}
+
     # Notificacion a los clientes de la oferta
 
     :timer.sleep(1000)

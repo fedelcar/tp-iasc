@@ -36,16 +36,16 @@ defmodule Escenario1Test do
 #   B es notificado de la finalización de la subasta y de que no le fue adjudicada
 
   test "escenario1", %{plataforma: plataforma} do
-    Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
+    Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "se vende heladera", "john snow"}
-    assert_receive {:new_subasta, "se vende heladera", "arya stark"}
-    # Notificacion a los clientes de la nueva subasta
+    assert_receive {:new_subasta, "arya stark", "se vende heladera"}
+    assert_receive {:new_subasta, "john snow", "se vende heladera"}
 
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
-    # Notificacion a los clientes de la oferta
+    assert_receive {:oferta_aceptada, "john snow", "se vende heladera", 15}
+    assert_receive {:oferta, "arya stark", "se vende heladera", 15, "john snow"}
 
     :timer.sleep(1000)
     # Notificacion a los clientes de la subasta finalizada
