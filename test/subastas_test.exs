@@ -13,4 +13,11 @@ defmodule SubastasTest do
     Subasta.create(subasta, {{"vendo_auto", :subasta}, {10, 20}})
     assert {:ok, {{"vendo_auto", :subasta}, {10, 20}}} = Subasta.lookup(subasta, {"vendo_auto", :subasta})
   end
+
+  test "spawns comprador", %{subasta: subasta, ets: ets} do
+    assert Subasta.lookup(subasta, {"jorge", :comprador}) == :not_found
+
+    Subasta.create(subasta, {{"miguel", :comprador}, {"miguel@miguel.miguel"}})
+    assert {:ok, {{"miguel", :comprador}, {"miguel@miguel.miguel"}}} = Subasta.lookup(subasta, {"miguel", :comprador})
+  end
 end
