@@ -3,6 +3,6 @@ defmodule Main do
 
   def start(_type, _args) do
     IO.puts "App started"
-    Subastas.Supervisor.start_link
+    Plataforma.Supervisor.start_link
   end
 end

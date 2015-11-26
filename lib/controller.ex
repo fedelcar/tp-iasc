@@ -8,31 +8,32 @@ defmodule Controller do
 
   def handle(:GET, [<<"subastas">>], req) do
     name = req.get_arg("name")
-    {:ok, {{name, :subasta}, {price, duration}}} = Subasta.lookup(Subasta, {name, :subasta})
-    {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{name}\", \"price\":\"#{price}\", \"duration\":\"#{duration}\"}"}
+    {:ok, subasta} = Plataforma.lookup_subasta(Plataforma, name)
+    {:ok, [{"Content-type", "application/json"}],
+       "{\"name\":\"#{subasta.name}\", \"price\":\"#{subasta.price}\",
+        \"duration\":\"#{subasta.duration}\", \"offerer\":\"#{subasta.offerer}\"}"}
   end
 
   def handle(:GET, [<<"compradores">>], req) do
     name = req.get_arg("name")
-    {:ok, {{name, :comprador}, {contacto}}} = Subasta.lookup(Subasta, {name, :comprador})
-    {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{name}\", \"contacto\":\"#{contacto}\"}"}
+    {:ok, comprador} = Plataforma.lookup_comprador(Plataforma, name)
+    {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
   end
 
   def handle(:POST, [<<"subastas">>], req) do
     map = parse_body(req)
     name = Map.get(map, "name")
-    precio_base_str = Map.get(map, "precio_base")
-    duracion_str = Map.get(map, "duracion")
+    base_price_str = Map.get(map, "base_price")
+    duration_str = Map.get(map, "duration")
 
-    case {name, precio_base_str, duracion_str} do
+    case {name, base_price_str, duration_str} do
       {nil, _, _} -> {400, [], "Bad Request"}
       {_, nil, _} -> {400, [], "Bad Request"}
       {_, _, nil} -> {400, [], "Bad Request"}
-      {name, precio_base_str, duracion_str} ->
-        {duracion, _} = Integer.parse(duracion_str)
-        {precio_base, _} = Integer.parse(precio_base_str)
-        subasta = {{name, :subasta}, {precio_base, duracion}}
-        Subasta.create(Subasta, subasta)
+      {name, base_price_str, duration_str} ->
+        {duration, _} = Integer.parse(duration_str)
+        {base_price, _} = Integer.parse(base_price_str)
+        Plataforma.create_subasta(Plataforma, name, base_price, duration)
         {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
     end
   end
@@ -46,7 +47,7 @@ defmodule Controller do
       {nil, _} -> {400, [], "Bad Request"}
       {_, nil} -> {400, [], "Bad Request"}
       {name, contacto} ->
-        Subasta.create(Subasta, {{name, :comprador}, {contacto}})
+        Plataforma.create_comprador(Plataforma, name, contacto)
         {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
     end
   end
