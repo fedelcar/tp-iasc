@@ -1,4 +1,4 @@
-defmodule Escenario1and2_Test do
+defmodule Escenario2Test do
   use ExUnit.Case
 
   setup do
@@ -7,16 +7,16 @@ defmodule Escenario1and2_Test do
     {:ok, subasta: subasta}
   end
 
-  test "escenario1and2", %{subasta: subasta} do
+  test "escenario2", %{subasta: subasta} do
     miguel = Subasta.create(subasta, {{"miguel", :comprador}, {"miguel@miguel.miguel"}})
     jorge = Subasta.create(subasta, {{"jorge", :comprador}, {"jorge@jorge.jorge"}})
     anibal = Subasta.create(subasta, {{"anibal", :comprador}, {"anibal@anibal.anibal"}})
 
     Subasta.create(subasta, {{"vendo auto", :subasta}, {10, 3, nil}}) # missing notification to al buyers
 
-    Subasta.ofertar(subasta, "vendo auto", 15, jorge)
-    Subasta.ofertar(subasta, "vendo auto", 12, anibal)
-    Subasta.ofertar(subasta, "vendo auto", 17, anibal)
+    Subasta.ofertar(subasta, "vendo auto", 15, jorge) # assert offer accepted
+    Subasta.ofertar(subasta, "vendo auto", 12, anibal)  # assert offer rejected
+    Subasta.ofertar(subasta, "vendo auto", 17, anibal) # assert offer accepted
 
     :timer.sleep(3000)
     # assert that bidding finished
