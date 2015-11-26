@@ -7,8 +7,8 @@ defmodule Subasta do
     GenServer.call(server, {:lookup, name})
   end
 
-  def create(server, {name, price, lifespan}) do
-    GenServer.cast(server, {:create, {name, price, lifespan}})
+  def create(server, {key, values}) do
+    GenServer.cast(server, {:create, {key, values}})
   end
 
   ## Server Callbacks
@@ -17,28 +17,28 @@ defmodule Subasta do
     GenServer.start_link(__MODULE__, ets, opts)
   end
 
-  def handle_cast({:create, {name, price, lifespan}}, ets) do
-    case lookup_ets(ets, name) do
-      {:ok, subasta} ->
+  def handle_cast({:create, {key, values}}, ets) do
+    case lookup_ets(ets, key) do
+      {:ok, entity} ->
         {:noreply, ets}
       :not_found ->
-        :ets.insert(ets, {name, price, lifespan})
+        :ets.insert(ets, {key, values})
         {:noreply, ets}
     end
   end
 
-  def handle_call({:lookup, name}, _from, ets) do
-    case lookup_ets(ets, name) do
-      {:ok, subasta} ->
-        {:reply, {:ok, subasta}, ets}
+  def handle_call({:lookup, key}, _from, ets) do
+    case lookup_ets(ets, key) do
+      {:ok, entity} ->
+        {:reply, {:ok, entity}, ets}
       :not_found ->
         {:reply, :not_found, ets}
     end
   end
 
-  def lookup_ets(ets, name) do
-    case :ets.lookup(ets, name) do
-      [subasta] -> {:ok, subasta}
+  def lookup_ets(ets, key) do
+    case :ets.lookup(ets, key) do
+      [entity] -> {:ok, entity}
       [] -> :not_found
     end
   end
