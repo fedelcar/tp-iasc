@@ -10,8 +10,8 @@ defmodule SubastasTest do
   test "spawns subastas", %{subasta: subasta, ets: ets} do
     assert Subasta.lookup(subasta, "vendo_auto") == :not_found
 
-    Subasta.create(subasta, "vendo_auto")
-    assert {:ok, {"vendo_auto"}} = Subasta.lookup(subasta, "vendo_auto")
+    Subasta.create(subasta, {"vendo_auto", 10, 20})
+    assert {:ok, {"vendo_auto", 10, 20}} = Subasta.lookup(subasta, "vendo_auto")
 
     # KV.Bucket.put(bucket, "milk", 1)
     # assert KV.Bucket.get(bucket, "milk") == 1

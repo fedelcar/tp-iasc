@@ -7,8 +7,8 @@ defmodule Subasta do
     GenServer.call(server, {:lookup, name})
   end
 
-  def create(server, name) do
-    GenServer.cast(server, {:create, name})
+  def create(server, {name, price, lifespan}) do
+    GenServer.cast(server, {:create, {name, price, lifespan}})
   end
 
   ## Server Callbacks
@@ -17,12 +17,12 @@ defmodule Subasta do
     GenServer.start_link(__MODULE__, ets, opts)
   end
 
-  def handle_cast({:create, name}, ets) do
+  def handle_cast({:create, {name, price, lifespan}}, ets) do
     case lookup_ets(ets, name) do
       {:ok, subasta} ->
         {:noreply, ets}
       :not_found ->
-        :ets.insert(ets, {name})
+        :ets.insert(ets, {name, price, lifespan})
         {:noreply, ets}
     end
   end
