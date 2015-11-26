@@ -7,14 +7,35 @@ defmodule Controller do
   end
 
   def handle(:GET, [<<"subastas">>], req) do
+    name = req.get_arg("name")
+    {:ok, {{name, :subasta}, {price, duration}}} = Subasta.lookup(Subasta, {name, :subasta})
+    {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{name}\", \"price\":\"#{price}\", \"duration\":\"#{duration}\"}"}
+  end
 
-    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"aca va la lista de las subastas\"}"}
+  def handle(:GET, [<<"compradores">>], req) do
+    name = req.get_arg("name")
+    {:ok, {{name, :comprador}, {contacto}}} = Subasta.lookup(Subasta, {name, :comprador})
+    {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{name}\", \"contacto\":\"#{contacto}\"}"}
   end
 
   def handle(:POST, [<<"subastas">>], req) do
     map = parse_body(req)
     name = Map.get(map, "name")
-    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"ok #{name}\"}"}
+    precio_base_str = Map.get(map, "precio_base")
+    duracion_str = Map.get(map, "duracion")
+    {duracion, _} = Integer.parse(duracion_str)
+    {precio_base, _} = Integer.parse(precio_base_str)
+    subasta = {{name, :subasta}, {precio_base, duracion}}
+    Subasta.create(Subasta, subasta)
+    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+  end
+
+  def handle(:POST, [<<"compradores">>], req) do
+    map = parse_body(req)
+    name = Map.get(map, "name")
+    contacto = Map.get(map, "contacto")
+    Subasta.create(Subasta, {{name, :comprador}, {contacto}})
+    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
   end
 
   def handle(:POST, [<<"crash">>], _req) do
