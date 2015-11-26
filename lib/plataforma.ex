@@ -8,31 +8,23 @@ defmodule Plataforma do
   end
 
   def lookup_subasta(server, name) do
-    case GenServer.call(server, {:lookup, {name, :subasta}}) do
-      :not_found -> 
-        :not_found
-      {:ok, {{name, :subasta}, {subasta}}} -> 
-        {:ok, subasta}
-    end
+    key = {name, :subasta}
+    GenServer.call(server, {:lookup, key})
   end
 
   def create_subasta(server, name, base_price, duration) do
     GenServer.cast(server,
-      {:create, {{name, :subasta}, {%Subasta{name: name, price: base_price, duration: duration, offerer: :no_offered_yet}}}})
+      {:create, {{name, :subasta}, %Subasta{name: name, price: base_price, duration: duration, offerer: :no_offered_yet}}})
   end
 
   def lookup_comprador(server, name) do
-    case GenServer.call(server, {:lookup, {name, :comprador}}) do
-      :not_found -> 
-        :not_found
-      {:ok, {{name, :comprador}, {comprador}}} -> 
-        {:ok, comprador}
-    end
+    key = {name, :comprador}
+    GenServer.call(server, {:lookup, key})
   end
 
   def create_comprador(server, name, contacto) do
     GenServer.cast(server, 
-      {:create, {{name, :comprador}, {%Comprador{name: name, contacto: contacto}}}})
+      {:create, {{name, :comprador}, %Comprador{name: name, contacto: contacto}}})
   end
 
   def ofertar(server, name, price, offerer) do
@@ -56,20 +48,18 @@ defmodule Plataforma do
             {:noreply, state}
           {name, :subasta} ->
             :ets.insert(state.ets, {key, value})
-            compradores = :ets.match(state.ets, {:"_", :"$2"})
+            compradores = :ets.match(state.ets, {:"_", :"$1"})
             Enum.map(compradores, 
               fn(result) -> 
                 case result do
-                  [{comprador}] ->
-                    GenEvent.sync_notify(state.notification, {:new_subasta, name, comprador.name})
+                  [comprador] ->
+                    GenEvent.notify(state.notification, {:new_subasta, name, comprador.name})
                     :ok
                   _ -> 
                     :ok
                 end
               end
             )
-
-              
             {:noreply, state}
         end
     end
@@ -86,7 +76,7 @@ defmodule Plataforma do
 
   def handle_call({:ofertar, {name, price, offerer}}, _from, state) do
       case lookup_ets(state.ets, {name, :subasta}) do
-        {:ok, {_, {subasta}}} ->
+        {:ok, subasta} ->
           if price <= subasta.price do
             {:reply, {:bad_request, "La oferta no es lo suficientemente alta"}, state}
           else
@@ -100,15 +90,16 @@ defmodule Plataforma do
 
   def lookup_ets(ets, key) do
     case :ets.lookup(ets, key) do
-      [entity] -> {:ok, entity}
+      [{key, entity}] -> {:ok, entity}
       [] -> :not_found
     end
   end
 
   def update_price(ets, name, new_price, offerer) do
     key = {name, :subasta}
-    {:ok, {_, {subasta}}} = lookup_ets(ets, key)
+    {:ok, subasta} = lookup_ets(ets, key)
     :ets.delete(ets, key)
-    :ets.insert(ets, {key, {%{subasta | price: new_price, offerer: offerer}}})
+    :ets.insert(ets, {key, %{subasta | price: new_price, offerer: offerer}})
   end
+
 end
