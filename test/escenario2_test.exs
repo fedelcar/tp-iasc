@@ -2,31 +2,33 @@ defmodule Escenario2Test do
   use ExUnit.Case
 
   setup do
-    ets = :ets.new(:registry_table, [:set, :public])
-    {:ok, subasta} = Subasta.start_link(ets, [])
-    {:ok, subasta: subasta}
+    ets = :ets.new(:ets_name, [:set, :public])
+    {:ok, plataforma} = Plataforma.start_link(ets, [])
+    {:ok, plataforma: plataforma}
   end
-
-
 
 # Similar al escenario anterior, pero antes de terminar la subasta, B oferta un precio mayor,
 # y al cumplirse el plazo, se le adjudica a éste.
 # Obviamente, este proceso de superar la oferta anterior puede repetirse indefinidamente mientras la subasta esté abierta.
 
-  test "escenario2", %{subasta: subasta} do
-    miguel = Subasta.create(subasta, {{"miguel", :comprador}, {"miguel@miguel.miguel"}})
-    jorge = Subasta.create(subasta, {{"jorge", :comprador}, {"jorge@jorge.jorge"}})
-    anibal = Subasta.create(subasta, {{"anibal", :comprador}, {"anibal@anibal.anibal"}})
+  test "escenario2", %{plataforma: plataforma} do
+    Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
+    Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
 
-    Subasta.create(subasta, {{"vendo auto", :subasta}, {10, 3, nil}}) # missing notification to al buyers
+    Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
+    # Notificacion a los clientes de la nueva subasta
 
-    Subasta.ofertar(subasta, "vendo auto", 15, jorge) # assert offer accepted
-    Subasta.ofertar(subasta, "vendo auto", 12, anibal)  # assert offer rejected
-    Subasta.ofertar(subasta, "vendo auto", 17, anibal) # assert offer accepted
+    Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
+    Plataforma.ofertar(plataforma, "se vende heladera", 200, "arya stark")
+    # Notificacion a los clientes de las ofertas
 
-    :timer.sleep(3000)
-    # assert that bidding finished
-    assert {:ok, {{"vendo auto", :subasta}, {17, 3, anibal}}} = Subasta.lookup(subasta, {"vendo auto", :subasta})
-    # assert notification to winner and losers
+    :timer.sleep(1000)
+    # Notificacion a los clientes de la subasta finalizada
+
+    {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
+    assert subasta.name == "se vende heladera"
+    assert subasta.price == 200
+    assert subasta.duration == 1
+    assert subasta.offerer == "arya stark"
   end
 end

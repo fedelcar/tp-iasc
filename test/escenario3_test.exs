@@ -2,27 +2,29 @@ defmodule Escenario3Test do
   use ExUnit.Case
 
   setup do
-    ets = :ets.new(:registry_table, [:set, :public])
-    {:ok, subasta} = Subasta.start_link(ets, [])
-    {:ok, subasta: subasta}
+    ets = :ets.new(:ets_name, [:set, :public])
+    {:ok, plataforma} = Plataforma.start_link(ets, [])
+    {:ok, plataforma: plataforma}
   end
 
 # Similar a los escenarios anteriores, pero el vendedor cancela la subasta antes de la expiración
 # de la subasta y adjudicación del ganador. En este caso, obviamente, nadie gana la subasta,
 # y todos los compradores son notificados.
 
-  test "escenario3", %{subasta: subasta} do
-    miguel = Subasta.create(subasta, {{"miguel", :comprador}, {"miguel@miguel.miguel"}})
-    jorge = Subasta.create(subasta, {{"jorge", :comprador}, {"jorge@jorge.jorge"}})
-    anibal = Subasta.create(subasta, {{"anibal", :comprador}, {"anibal@anibal.anibal"}})
+  test "escenario3", %{plataforma: plataforma} do
+    Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
+    Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
 
-    Subasta.create(subasta, {{"vendo auto", :subasta}, {10, 3, nil}}) # missing notification to all buyers
+    Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
+    # Notificacion a los clientes de la nueva subasta
 
-    Subasta.ofertar(subasta, "vendo auto", 15, jorge) # assert offer accepted
-    Subasta.ofertar(subasta, "vendo auto", 17, anibal) # assert offer accepted
+    Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
+    # Notificacion a los clientes de la oferta
 
-    Subasta.cancelar(subasta, "vendo auto") # this should cancel the bidding and notify all buyers
+    :timer.sleep(1000)
+    
 
-    # assert notification to everyone
+    # Implementar cancelacion
+
   end
 end

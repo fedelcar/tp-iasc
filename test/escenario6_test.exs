@@ -2,9 +2,9 @@ defmodule Escenario6Test do
   use ExUnit.Case
 
   setup do
-    ets = :ets.new(:registry_table, [:set, :public])
-    {:ok, subasta} = Subasta.start_link(ets, [])
-    {:ok, subasta: subasta}
+    ets = :ets.new(:ets_name, [:set, :public])
+    {:ok, plataforma} = Plataforma.start_link(ets, [])
+    {:ok, plataforma: plataforma}
   end
 
 # Con la subasta ya en progreso, el servidor abruptamente falla por un error de hardware. En no más
@@ -20,6 +20,6 @@ defmodule Escenario6Test do
 
 # Cuando se produce una caída, se debería extender el plazo de la subasta en 5 segundos.
 
-  test "escenario6", %{subasta: subasta} do
+  test "escenario6", %{plataforma: plataforma} do
   end
 end
