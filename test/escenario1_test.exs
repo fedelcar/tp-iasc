@@ -35,21 +35,30 @@ defmodule Escenario1Test do
 #   Se adjudica a A como el comprador, y se le notifica apropiadamente
 #   B es notificado de la finalización de la subasta y de que no le fue adjudicada
 
-  test "escenario1", %{plataforma: plataforma} do
+  test "Escenario 1", %{plataforma: plataforma} do
+
+    # Se registran los dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
+    # Nueva subasta y notifiación a todos de la misma
     Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
     assert_receive {:new_subasta, "arya stark", "se vende heladera"}
     assert_receive {:new_subasta, "john snow", "se vende heladera"}
 
+    # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
     assert_receive {:oferta_aceptada, "john snow", "se vende heladera", 15}
     assert_receive {:oferta, "arya stark", "se vende heladera", 15, "john snow"}
 
+    # Esperamos a que termine la subasta
     :timer.sleep(1000)
-    # Notificacion a los clientes de la subasta finalizada
 
+    # Notificacion a los clientes de la subasta finalizada
+    assert_receive {:subasta_finished, "john snow", "se vende heladera"}
+    assert_receive {:subasta_finished, "arya stark", "se vende heladera"}
+
+    # Assert de quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
     assert subasta.name == "se vende heladera"
     assert subasta.price == 15
