@@ -8,16 +8,24 @@ defmodule Controller do
 
   def handle(:GET, [<<"subastas">>], req) do
     name = req.get_arg("name")
-    {:ok, subasta} = Plataforma.lookup_subasta(Plataforma, name)
-    {:ok, [{"Content-type", "application/json"}],
-       "{\"name\":\"#{subasta.name}\", \"price\":\"#{subasta.price}\",
-        \"duration\":\"#{subasta.duration}\", \"offerer\":\"#{subasta.offerer}\"}"}
+    case Plataforma.lookup_subasta(Plataforma, name) do
+      {:ok, subasta} ->
+        {:ok, [{"Content-type", "application/json"}],
+          "{\"name\":\"#{subasta.name}\", \"price\":\"#{subasta.price}\",
+          \"duration\":\"#{subasta.duration}\", \"offerer\":\"#{subasta.offerer}\"}"}
+      _ ->
+        {404, [], "not found"}
+    end
   end
 
   def handle(:GET, [<<"compradores">>], req) do
     name = req.get_arg("name")
     {:ok, comprador} = Plataforma.lookup_comprador(Plataforma, name)
-    {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
+    case Plataforma.lookup_comprador(Plataforma, name) do
+      {:ok, comprador} ->
+        {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
+      _ ->
+        {404, [], "not found"}
   end
 
   def handle(:POST, [<<"subastas">>], req) do
