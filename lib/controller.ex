@@ -26,6 +26,7 @@ defmodule Controller do
         {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
       _ ->
         {404, [], "not found"}
+    end
   end
 
   def handle(:POST, [<<"subastas">>], req) do
