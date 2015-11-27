@@ -22,8 +22,10 @@ defmodule Plataforma.Supervisor do
       worker(:elli, [[port: 3000, callback: @name_controller]])
     ]
 
-    #GenEvent.add_mon_handler(@name_notification, Notification, self())
-
     supervise(children, strategy: :one_for_one)
+  end
+
+  def on_start(_) do
+    GenEvent.add_handler(@name_notification, Notification, self())
   end
 end
