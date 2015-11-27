@@ -1,4 +1,5 @@
-Subastas
-========
+Subastas - TP IASC
+===================
 
-** TODO: Add description **
+Hay un test por cada escenario descripto.
+Correrlos con ```mix test```.
