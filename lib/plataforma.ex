@@ -185,7 +185,7 @@ defmodule Plataforma do
       fn(result) ->
         case result do
           [_,comprador] ->
-            GenEvent.notify(pid, {:cancel_subasta, subasta})
+            GenEvent.notify(pid, {:cancel_subasta, comprador.name, subasta})
             :ok
         end
       end

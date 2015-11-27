@@ -58,7 +58,7 @@ defmodule Escenario1Test do
     assert_receive {:subasta_finished, "john snow", "se vende heladera"}
     assert_receive {:subasta_finished, "arya stark", "se vende heladera"}
 
-    # Assert de quién ganó la subasta
+    # Corroboramos quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
     assert subasta.name == "se vende heladera"
     assert subasta.price == 15
