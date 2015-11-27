@@ -1,37 +1,43 @@
 defmodule Comunicator do
-  use GenServer
+  use GenEvent
+
+  def init(name_plataforma) do
+    IO.puts "Comunicator started"
+    {:ok, %{plataforma: name_plataforma, connected: false}}
+  end 
 
   def handle_event({:message, message}, state) do
     IO.puts "me llego un mensaje al comunicator #{message}"
     GenServer.cast(state.plataforma, message)
-    {:noreply, state}
+    {:ok, state}
   end
 
   def handle_event({:send, mensaje}, state) do
     if !state.connected do
       case Node.connect(get_node) do
         true ->
-          IO.puts "conexion exitosa con el node #{node}"
+          IO.puts "conexion exitosa con el node #{get_node}"
           Node.monitor(get_node, true)
           GenServer.cast({__MODULE__, get_node}, {:message, mensaje})
-          {:noreply, %{state | connected: true}}
+          {:ok, %{state | :connected => true}}
         false ->
-          IO.puts "conexion fallida con el node #{node}"
-          {:noreply, %{state | connected: false}} 
+          IO.puts "conexion fallida con el node #{get_node}"
+          {:ok, %{state | :connected => false}} 
         :ignored ->  
           IO.puts "conexion ignorada"
-          {:noreply, %{state | connected: false}}
+          {:ok, %{state | :connected => false}}
       end
     else
       GenServer.cast({__MODULE__, get_node}, {:message, mensaje})
-      {:noreply, state} 
+      {:ok, state} 
     end
   end
 
-  def handle_event({:nodedown, :node}, state) do
-    IO.puts "Se cayo el nodo!"
-    GenServer.cast(state.plataforma, {:mode, :secondaty})
-    {:noreply, %{state | connected: false}}
+  def handle_info({:nodedown, node}, state) do
+    if get_node == node do 
+      GenServer.cast(state.plataforma, {:mode, :secondaty})
+    end
+    {:ok, %{state | :connected => false}}
   end
 
   def get_node do

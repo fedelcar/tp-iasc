@@ -10,23 +10,20 @@ defmodule Plataforma.Supervisor do
   @name_dets_file 'subastas_db.dets'
   @name_plataforma Plataforma
   @name_controller Controller
-  @name_notification Notification
-  @name_event_handler :event_manager
-  @name_comunicator Comunicator
+  @name_event_handler Event_Manager
 
   def init(:ok) do
-    :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+    :dets.open_file(@dets_alias, [file: @name_dets_file, type: :bag])
+
+    {:ok, pid} = GenEvent.start_link([name: @name_event_handler])
+    GenEvent.add_mon_handler(@name_event_handler, Notification, self())
+    GenEvent.add_mon_handler(@name_event_handler, Comunicator, @name_plataforma)
+
     children = [
-      worker(GenEvent, [[name: @name_event_handler]]),
-      worker(Plataforma, [@dets_alias,  @name_event_handler, [name: @name_plataforma]]),
+      worker(Plataforma, [@dets_alias, @name_event_handler, [name: @name_plataforma]]),
       worker(:elli, [[port: Application.get_env(:subastas, :port), callback: @name_controller]])
     ]
 
     supervise(children, strategy: :one_for_one)
-  end
-
-  def on_start(_) do
-    GenEvent.add_handler(@name_notification, Notification, self())
-    GenEvent.add_handler(@name_comunicator, Comunicator, %{plataforma: @name_plataforma, connected: false})
   end
 end
