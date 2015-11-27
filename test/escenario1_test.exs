@@ -10,11 +10,21 @@ defmodule Escenario1Test do
     end
   end
 
+  @dets_file_name 'test_db.dets'
+  @dets_alias :dets_alias
+
   setup do
     {:ok, event_manager} = GenEvent.start_link
-    ets = :ets.new(:ets_name, [:set, :public])
-    {:ok, plataforma} = Plataforma.start_link(ets, event_manager, [])
+    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+
+    {:ok, plataforma} = Plataforma.start_link(dets, event_manager, [])
     GenEvent.add_mon_handler(event_manager, Forwarder, self())
+
+    on_exit fn ->
+      :dets.close(dets)
+      :file.delete(@dets_file_name)
+    end
+
     {:ok, plataforma: plataforma}
   end
 

@@ -1,5 +1,5 @@
 defmodule Escenario6Test do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
   defmodule Forwarder do
     use GenEvent
@@ -10,11 +10,21 @@ defmodule Escenario6Test do
     end
   end
 
+  @dets_file_name 'test_db.dets'
+  @dets_alias :dets_alias
+
   setup do
     {:ok, notification} = GenEvent.start_link
-    ets = :ets.new(:ets_name, [:set, :public])
-    {:ok, plataforma} = Plataforma.start_link(ets, notification, [])
+    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+
+    {:ok, plataforma} = Plataforma.start_link(dets, notification, [])
     GenEvent.add_mon_handler(notification, Forwarder, self())
+
+    on_exit fn ->
+      :dets.close(dets)
+      :file.delete(@dets_file_name)
+    end
+
     {:ok, plataforma: plataforma}
   end
 
