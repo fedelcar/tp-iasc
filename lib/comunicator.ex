@@ -18,7 +18,7 @@ defmodule Comunicator do
         true ->
           IO.puts "conexion exitosa con el node #{get_node}"
           Node.monitor(get_node, true)
-          GenServer.cast({__MODULE__, get_node}, {:message, mensaje})
+          GenServer.cast({state.plataforma, get_node}, {:message, mensaje})
           {:ok, %{state | :connected => true}}
         false ->
           IO.puts "conexion fallida con el node #{get_node}"

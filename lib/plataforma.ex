@@ -123,6 +123,11 @@ defmodule Plataforma do
     {:noreply, %{state | mode: new_mode}}
   end
 
+  def handle_cast({:message, message}, state) do
+    GenEvent.notify(state.event_manager, {:message, message})
+    {:noreply, state}
+  end
+
   def handle_call({:lookup, key}, _from, state) do
     case lookup_dets(state.dets, key) do
       {:ok, entity} ->
