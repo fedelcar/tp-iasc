@@ -28,7 +28,7 @@ defmodule Plataforma do
   end
 
   def ofertar(server, name, price, offerer) do
-    GenServer.call(server, {:ofertar, {name, price, offerer}})
+    GenServer.cast(server, {:ofertar, {name, price, offerer}})
   end
 
   def close_subasta(server, subasta) do
@@ -105,18 +105,19 @@ defmodule Plataforma do
     end
   end
 
-  def handle_call({:ofertar, {name, price, offerer}}, _from, state) do
+  def handle_cast({:ofertar, {name, price, offerer}}, state) do
       case lookup_ets(state.ets, {name, :subasta}) do
         {:ok, subasta} ->
           if price <= subasta.price do
-            {:reply, {:bad_request, "La oferta no es lo suficientemente alta"}, state}
+            GenEvent.notify(state.notification, {:offer_too_low, offerer})
+            {:noreply, state}
           else
             update_price(state.ets, name, price, offerer)
             notify_ofertas(state.ets, state.notification, name, price, offerer)
-            {:reply, {:ok, "Oferta aceptada"}, state}
+            {:noreply, state}
           end
         :not_found ->
-          {:reply, :not_found, state}
+          {:noreply, state}
     end
   end
 

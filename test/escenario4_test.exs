@@ -40,6 +40,7 @@ defmodule Escenario4Test do
 
      # Nueva oferta, pero es inferior a la ganadora, por lo que se ignora
     Plataforma.ofertar(plataforma, "se vende heladera", 10, "arya stark")
+    assert_receive {:offer_too_low, "arya stark"}
 
     # Nueva oferta superior y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 200, "arya stark")

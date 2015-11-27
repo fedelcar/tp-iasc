@@ -56,7 +56,7 @@ defmodule Escenario6Test do
     # Process.exit(plataforma, :killed_by_hurricane)
 
     # Esperamos a que se levanta la plataforma alternativa
-    :timer.sleep(2000)
+    # :timer.sleep(2000)
 
     # La plataforma nueva puede recibir ofertas
     Plataforma.ofertar(plataforma, "se vende heladera", 300, "arya stark")
@@ -64,7 +64,7 @@ defmodule Escenario6Test do
     assert_receive {:oferta, "john snow", "se vende heladera", 300, "arya stark"}
 
     # Esperamos a que termine la subasta, tomando en cuenta los 5 segundos extra
-    :timer.sleep(6000)
+    :timer.sleep(1000)
 
     # Notificacion a los clientes de la subasta finalizada
     assert_receive {:subasta_finished, "john snow", "se vende heladera"}
