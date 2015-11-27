@@ -6,7 +6,8 @@ defmodule Plataforma.Supervisor do
     Supervisor.start_link(__MODULE__, :ok)
   end
 
-  @name_ets ETS
+  @dets_alias DETS
+  @name_dets_file 'subastas_db.dets'
   @name_plataforma Plataforma
   @name_controller Controller
   @name_notification Notification
@@ -14,11 +15,10 @@ defmodule Plataforma.Supervisor do
   @name_comunicator Comunicator
 
   def init(:ok) do
-    :ets.new(@name_ets,
-                 [:set, :public, :named_table, {:read_concurrency, true}])
+    :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
     children = [
       worker(GenEvent, [[name: @name_event_handler]]),
-      worker(Plataforma, [@name_ets,  @name_event_handler, [name: @name_plataforma]]),
+      worker(Plataforma, [@dets_alias,  @name_event_handler, [name: @name_plataforma]]),
       worker(:elli, [[port: Application.get_env(:subastas, :port), callback: @name_controller]])
     ]
 
