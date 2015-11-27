@@ -19,7 +19,7 @@ defmodule Plataforma.Supervisor do
       worker(Comunicator, [[name: @name_comunicator]]),
       worker(GenEvent, [[name: @name_notification]]),
       worker(Plataforma, [@name_ets,  @name_notification, [name: @name_plataforma]]),
-      worker(:elli, [[port: 3000, callback: @name_controller]])
+      worker(:elli, [[port: Application.get_env(:subastas, :port), callback: @name_controller]])
     ]
 
     supervise(children, strategy: :one_for_one)

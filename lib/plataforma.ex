@@ -42,7 +42,8 @@ defmodule Plataforma do
   ## Server Callbacks
 
   def init({ets, notification}) do
-    {:ok, %{notification: notification, ets: ets}}
+    GenEvent.add_mon_handler(notification, Notification, self())
+    {:ok, %{notification: notification, ets: ets, mode: Application.get_env(:subastas, :mode)}}
   end
 
   def handle_cast({:create_comprador, {name, value}}, state) do
@@ -96,6 +97,11 @@ defmodule Plataforma do
     end
   end
 
+  def handle_cast({:mode, new_mode}, state) do
+    IO.puts "Se cambio el modo a #{new_mode}"
+    {:noreply, %{state | mode: new_mode}}
+  end
+
   def handle_call({:lookup, key}, _from, state) do
     case lookup_ets(state.ets, key) do
       {:ok, entity} ->
@@ -121,6 +127,8 @@ defmodule Plataforma do
     end
   end
 
+  # helper functions
+
   def lookup_ets(ets, key) do
     case :ets.lookup(ets, key) do
       [{key, entity}] -> {:ok, entity}
@@ -134,8 +142,6 @@ defmodule Plataforma do
     :ets.delete(ets, key)
     :ets.insert(ets, {key, %{subasta | price: new_price, offerer: offerer}})
   end
-
-  # notification functions
 
   def notify_subastas(ets, pid, subasta) do
     compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
@@ -192,6 +198,4 @@ defmodule Plataforma do
       end
     )
   end
-
-
 end
