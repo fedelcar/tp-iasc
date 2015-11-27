@@ -60,7 +60,7 @@ defmodule Controller do
     {400, [], "Bad Request"}
   end
 
-  def handle_event(:elli_startup, [_req, _exit, _stack], _config) do
+  def handle_event(:elli_startup, _, _config) do
     :ok
   end
 
