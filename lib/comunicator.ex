@@ -4,12 +4,13 @@ defmodule Comunicator do
   ## Client API
 
   def start_link(plataforma, opts \\ []) do
-    GenServer.start_link(__MODULE__, {plataforma}, opts)
+    GenServer.start_link(__MODULE__, plataforma, opts)
   end
 
   ## Server Callbacks
 
-  def init({plataforma}) do
+  def init(plataforma) do
+    IO.puts "Comunicator inits"
     {:ok, %{plataforma: plataforma, connected: false}}
   end
 
@@ -40,7 +41,7 @@ defmodule Comunicator do
     end
   end
 
-  def handle_cast({nodedown, node}, state) do
+  def handle_cast({:nodedown, :node}, state) do
     IO.puts "Se cayo el nodo!"
     GenServer.cast(state.plataforma, {:mode, :secondaty})
     {:noreply, %{state | connected: false}}
