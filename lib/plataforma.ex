@@ -82,6 +82,7 @@ defmodule Plataforma do
       :not_found ->
         {:noreply, state}
     end
+  end
 
   def handle_cast({:cancel, name}, state) do
     key = {name, :subasta}
@@ -180,8 +181,8 @@ defmodule Plataforma do
 
   def notify_cancel(ets, pid, subasta) do
     compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores, 
-      fn(result) -> 
+    Enum.map(compradores,
+      fn(result) ->
         case result do
           [_,comprador] ->
             GenEvent.notify(pid, {:cancel_subasta, subasta})
