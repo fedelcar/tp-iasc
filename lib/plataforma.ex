@@ -62,12 +62,11 @@ defmodule Plataforma do
       {:ok, entity} ->
         {:noreply, state}
       :not_found ->
-        subasta = {key, value}
-        :ets.insert(state.ets, subasta)
+        :ets.insert(state.ets, {key, value})
 
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
-        GenEvent.notify(pid, {:new_subasta, subasta})
+        GenEvent.notify(pid, {:new_subasta, value})
         notify_subastas(state.ets, state.notification, name)
         {:noreply, state}
     end
