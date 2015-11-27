@@ -35,9 +35,17 @@ defmodule Escenario3Test do
     assert_receive {:oferta, "arya stark", "se vende heladera", 15, "john snow"}
 
     :timer.sleep(1000)
+
+    {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
+    assert subasta.name == "se vende heladera"
+    assert subasta.price == 15
+    assert subasta.duration == 1
+    assert subasta.offerer == "john snow"
     
+    Plataforma.cancelar_subasta(plataforma, "se vende heladera")
+    assert_receive{:cancel_subasta, "se vende heladera"}
+    assert_receive{:cancel_subasta, "se vende heladera"}
 
-    # Implementar cancelacion
-
+    assert :not_found = Plataforma.lookup_subasta(plataforma, "se vende heladera")
   end
 end

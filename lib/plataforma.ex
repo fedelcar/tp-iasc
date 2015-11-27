@@ -35,6 +35,10 @@ defmodule Plataforma do
     GenServer.cast(server, {:cerrar, subasta})
   end
 
+  def cancelar_subasta(server, name) do
+    GenServer.cast(server, {:cancel, name})
+  end
+
   ## Server Callbacks
 
   def init({ets, notification}) do
@@ -75,6 +79,17 @@ defmodule Plataforma do
       {:ok, entity} ->
         # cerramo la subasta
         notify_subasta_finished(state.ets, state.notification, subasta.name)
+        {:noreply, state}
+      :not_found ->
+        {:noreply, state}
+    end
+
+  def handle_cast({:cancel, name}, state) do
+    key = {name, :subasta}
+    case lookup_ets(state.ets, key) do
+      {:ok, entity} ->
+        :ets.delete(state.ets, key)
+        notify_cancel(state.ets, state.notification, name)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
@@ -163,4 +178,19 @@ defmodule Plataforma do
       end
     )
   end
+
+  def notify_cancel(ets, pid, subasta) do
+    compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
+    Enum.map(compradores, 
+      fn(result) -> 
+        case result do
+          [_,comprador] ->
+            GenEvent.notify(pid, {:cancel_subasta, subasta})
+            :ok
+        end
+      end
+    )
+  end
+
+
 end
