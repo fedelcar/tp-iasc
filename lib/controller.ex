@@ -20,7 +20,6 @@ defmodule Controller do
 
   def handle(:GET, [<<"compradores">>], req) do
     name = req.get_arg("name")
-    {:ok, comprador} = Plataforma.lookup_comprador(Plataforma, name)
     case Plataforma.lookup_comprador(Plataforma, name) do
       {:ok, comprador} ->
         {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
