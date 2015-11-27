@@ -11,10 +11,10 @@ defmodule Escenario1Test do
   end
 
   setup do
-    {:ok, notification} = GenEvent.start_link
+    {:ok, event_manager} = GenEvent.start_link
     ets = :ets.new(:ets_name, [:set, :public])
-    {:ok, plataforma} = Plataforma.start_link(ets, notification, [])
-    GenEvent.add_mon_handler(notification, Forwarder, self())
+    {:ok, plataforma} = Plataforma.start_link(ets, event_manager, [])
+    GenEvent.add_mon_handler(event_manager, Forwarder, self())
     {:ok, plataforma: plataforma}
   end
 

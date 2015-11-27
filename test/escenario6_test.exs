@@ -35,15 +35,18 @@ defmodule Escenario6Test do
   test "Escenario 6", %{plataforma: plataforma} do
     # Se registran dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
+    assert_receive {:send, {:create_comprador, {"arya stark", _}}} ## Comunicator received for forward
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     # Nueva subasta y notifiación a todos de la misma
     Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
+    assert_receive {:send, {:create_subasta, {"se vende heladera", _}}} ## Comunicator received for forward
     assert_receive {:new_subasta, "arya stark", "se vende heladera"}
     assert_receive {:new_subasta, "john snow", "se vende heladera"}
 
     # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
+    assert_receive {:send, {:ofertar, "se vende heladera", 15, "john snow"}} ## Comunicator received for forward
     assert_receive {:oferta_aceptada, "john snow", "se vende heladera", 15}
     assert_receive {:oferta, "arya stark", "se vende heladera", 15, "john snow"}
 

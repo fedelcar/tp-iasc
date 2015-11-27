@@ -54,13 +54,12 @@ defmodule Plataforma do
           {:noreply, state}
         :not_found ->
           :ets.insert(state.ets, {key, value})
+          GenEvent.notify(state.event_manager, {:send, {:create_comprador, {name, value}}})
           {:noreply, state}
       end
-      GenEvent.notify(state.event_manager, {:create_comprador, {name, value}})
     else
       {:noreply, state}
     end
-
   end
 
   def handle_cast({:create_subasta, {name, value}}, state) do
@@ -161,7 +160,7 @@ defmodule Plataforma do
           end
         end
       )
-      GenEvent.notify(state.event_manager, {:create_subasta, {subasta.name, value}})
+      GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta, value}}})
     end
   end
 
@@ -194,7 +193,7 @@ defmodule Plataforma do
           end
         end
       )
-      GenEvent.notify(state.event_manager, {:ofertar, subasta.name, price, offerer})
+      GenEvent.notify(state.event_manager, {:send, {:ofertar, subasta, price, offerer}})
     end
   end
 
