@@ -124,7 +124,12 @@ defmodule Plataforma do
   end
 
   def handle_cast({:message, message}, state) do
-    GenEvent.notify(state.event_manager, {:message, message})
+    GenServer.cast(self, message)
+    {:noreply, state}
+  end
+
+  def handle_cast(_, state) do
+    IO.puts "handle_cast ignored because it didnt match with anything"
     {:noreply, state}
   end
 
