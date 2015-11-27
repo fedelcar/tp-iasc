@@ -23,12 +23,16 @@ defmodule Plataforma do
   end
 
   def create_comprador(server, name, contacto) do
-    GenServer.cast(server, 
+    GenServer.cast(server,
       {:create_comprador, {name, %Comprador{name: name, contacto: contacto}}})
   end
 
   def ofertar(server, name, price, offerer) do
     GenServer.call(server, {:ofertar, {name, price, offerer}})
+  end
+
+  def close_subasta(server, subasta) do
+    GenServer.cast(server, {:cerrar, subasta})
   end
 
   ## Server Callbacks
@@ -54,8 +58,25 @@ defmodule Plataforma do
       {:ok, entity} ->
         {:noreply, state}
       :not_found ->
-        :ets.insert(state.ets, {key, value})
+        subasta = {key, value}
+        :ets.insert(state.ets, subasta)
+
+        {:ok, pid} = GenEvent.start_link
+        GenEvent.add_mon_handler(pid, SubastaFinisher, self())
+        GenEvent.notify(pid, {:new_subasta, subasta})
         notify_subastas(state.ets, state.notification, name)
+        {:noreply, state}
+    end
+  end
+
+  def handle_cast({:cerrar, subasta}, state) do
+    key = {subasta.name, :subasta}
+    case lookup_ets(state.ets, key) do
+      {:ok, entity} ->
+        # cerramo la subasta
+        notify_subasta_finished(state.ets, state.notification, subasta.name)
+        {:noreply, state}
+      :not_found ->
         {:noreply, state}
     end
   end
@@ -102,8 +123,8 @@ defmodule Plataforma do
 
   def notify_subastas(ets, pid, subasta) do
     compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores, 
-      fn(result) -> 
+    Enum.map(compradores,
+      fn(result) ->
         case result do
           [_,comprador] ->
             GenEvent.notify(pid, {:new_subasta, comprador.name, subasta})
@@ -113,10 +134,23 @@ defmodule Plataforma do
     )
   end
 
+  def notify_subasta_finished(ets, pid, subasta) do
+    compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
+    Enum.map(compradores,
+      fn(result) ->
+        case result do
+          [_,comprador] ->
+            GenEvent.notify(pid, {:subasta_finished, comprador.name, subasta})
+            :ok
+        end
+      end
+    )
+  end
+
   def notify_ofertas(ets, pid, subasta, price, offerer) do
     compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores, 
-      fn(result) -> 
+    Enum.map(compradores,
+      fn(result) ->
         case result do
           [_,comprador] ->
             if comprador.name == offerer do
