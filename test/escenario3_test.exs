@@ -51,6 +51,7 @@ defmodule Escenario3Test do
     # Antes de que expire la subasta, la misma se cancela y se notifica a todos
     :timer.sleep(300)
     Plataforma.cancelar_subasta(plataforma, "se vende heladera")
+    assert_receive {:send, {:cancel, "se vende heladera"}} ## Comunicator received for forward
     assert_receive{:cancel_subasta, "arya stark", "se vende heladera"}
     assert_receive{:cancel_subasta, "john snow", "se vende heladera"}
 

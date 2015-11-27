@@ -32,7 +32,7 @@ defmodule Escenario4Test do
 # subasta inició y antes de que termine. C podrá hacer ofertas y ganar la subasta como cualquier
 # otro participante (A y B, en este caso)
 
-  test "escenario4", %{plataforma: plataforma} do
+  test "Escenario 4", %{plataforma: plataforma} do
     # Se registran los dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")

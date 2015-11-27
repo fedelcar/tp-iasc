@@ -76,7 +76,7 @@ defmodule Plataforma do
           GenEvent.notify(pid, {:new_subasta, value})
           notify_subastas(state, name, value)
         else
-          GenEvent.notify(pid, {:new_subasta,  %{value | duration: duration + 5}})
+          GenEvent.notify(pid, {:new_subasta,  %{value | duration: value.duration + 5}})
         end
         {:noreply, state}
     end
@@ -189,6 +189,7 @@ defmodule Plataforma do
         end
       end
     )
+    GenEvent.notify(pid, {:send, {:cerrar, subasta}})
   end
 
   def notify_ofertas(state, subasta, price, offerer) do
@@ -222,5 +223,6 @@ defmodule Plataforma do
         end
       end
     )
+    GenEvent.notify(pid, {:send, {:cancel, subasta}})
   end
 end

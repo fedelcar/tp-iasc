@@ -82,6 +82,7 @@ defmodule Escenario5Test do
     # Notificacion a los clientes de la subasta finalizada
     assert_receive {:subasta_finished, "john snow", "vendo auto"}
     assert_receive {:subasta_finished, "arya stark", "vendo auto"}
+    assert_receive {:send, {:cerrar, "se vende heladera"}} ## Comunicator received for forward
 
     # Corroboramos quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "vendo auto")
