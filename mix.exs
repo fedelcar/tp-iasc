@@ -14,9 +14,13 @@ defmodule Subastas.Mixfile do
   #
   # Type `mix help compile.app` for more information
   def application do
+    mod = {Main, []}
+    if Mix.env == :test do
+      mod = []
+    end
     [applications: [:logger],
      env: [node: :"cris@192.168.5.103", port: 3001, mode: :primary],
-     mod: {Main, []}]
+     mod: mod]
   end
 
   # Dependencies can be Hex packages:
