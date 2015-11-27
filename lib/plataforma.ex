@@ -72,8 +72,12 @@ defmodule Plataforma do
 
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
-        GenEvent.notify(pid, {:new_subasta, value})
-        notify_subastas(state, name, value)
+        if state.mode == :primary do
+          GenEvent.notify(pid, {:new_subasta, value})
+          notify_subastas(state, name, value)
+        else
+          GenEvent.notify(pid, {:new_subasta,  %{value | duration: duration + 5}})
+        end
         {:noreply, state}
     end
   end
