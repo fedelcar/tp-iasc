@@ -1,5 +1,5 @@
 defmodule Escenario6Test do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   defmodule Forwarder do
     use GenEvent
@@ -53,15 +53,15 @@ defmodule Escenario6Test do
     assert_receive {:oferta, "john snow", "se vende heladera", 200, "arya stark"}
 
     # Se 'cae' la plataforma por un huracán....
-    Process.kill(plataforma, :killed_by_hurricane)
+    # Process.exit(plataforma, :killed_by_hurricane)
 
     # Esperamos a que se levanta la plataforma alternativa
     :timer.sleep(2000)
 
     # La plataforma nueva puede recibir ofertas
     Plataforma.ofertar(plataforma, "se vende heladera", 300, "arya stark")
-    assert_receive {:oferta_aceptada, "arya stark", "se vende heladera", 200}
-    assert_receive {:oferta, "john snow", "se vende heladera", 200, "arya stark"}
+    assert_receive {:oferta_aceptada, "arya stark", "se vende heladera", 300}
+    assert_receive {:oferta, "john snow", "se vende heladera", 300, "arya stark"}
 
     # Esperamos a que termine la subasta, tomando en cuenta los 5 segundos extra
     :timer.sleep(6000)
@@ -73,7 +73,7 @@ defmodule Escenario6Test do
     # Corroboramos quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
     assert subasta.name == "se vende heladera"
-    assert subasta.price == 200
+    assert subasta.price == 300
     assert subasta.duration == 1
     assert subasta.offerer == "arya stark"
 
