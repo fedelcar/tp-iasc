@@ -15,6 +15,7 @@ defmodule Subastas.Mixfile do
   # Type `mix help compile.app` for more information
   def application do
     [applications: [:logger],
+     env: [node: [:"petro@Matiass-MacBook-Pro"]],
      mod: {Main, []}]
   end
 
