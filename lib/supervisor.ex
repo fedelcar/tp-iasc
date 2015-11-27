@@ -16,7 +16,6 @@ defmodule Plataforma.Supervisor do
     :ets.new(@name_ets,
                  [:set, :public, :named_table, {:read_concurrency, true}])
     children = [
-      worker(Comunicator, [@name_plataforma, [name: @name_comunicator]]),
       worker(GenEvent, [[name: @name_notification]]),
       worker(Plataforma, [@name_ets,  @name_notification, [name: @name_plataforma]]),
       worker(:elli, [[port: Application.get_env(:subastas, :port), callback: @name_controller]])
@@ -27,5 +26,6 @@ defmodule Plataforma.Supervisor do
 
   def on_start(_) do
     GenEvent.add_handler(@name_notification, Notification, self())
+    GenEvent.add_handler(@name_notification, Notification, %{plataforma: @name_plataforma, connected: false})
   end
 end

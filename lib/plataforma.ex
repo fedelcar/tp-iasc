@@ -3,8 +3,8 @@ defmodule Plataforma do
 
   ## Client API
 
-  def start_link(ets, notification, opts \\ []) do
-    GenServer.start_link(__MODULE__, {ets, notification}, opts)
+  def start_link(ets, event_manager, opts \\ []) do
+    GenServer.start_link(__MODULE__, {ets, event_manager}, opts)
   end
 
   def lookup_subasta(server, name) do
@@ -41,9 +41,9 @@ defmodule Plataforma do
 
   ## Server Callbacks
 
-  def init({ets, notification}) do
-    GenEvent.add_mon_handler(notification, Notification, self())
-    {:ok, %{notification: notification, ets: ets, mode: Application.get_env(:subastas, :mode)}}
+  def init({ets, event_manager}) do
+    GenEvent.add_mon_handler(event_manager, Notification, self())
+    {:ok, %{event_manager: event_manager, ets: ets, mode: Application.get_env(:subastas, :mode)}}
   end
 
   def handle_cast({:create_comprador, {name, value}}, state) do
@@ -68,7 +68,7 @@ defmodule Plataforma do
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
         GenEvent.notify(pid, {:new_subasta, value})
-        notify_subastas(state.ets, state.notification, name)
+        notify_subastas(state.ets, state.event_manager, name)
         {:noreply, state}
     end
   end
@@ -78,7 +78,7 @@ defmodule Plataforma do
     case lookup_ets(state.ets, key) do
       {:ok, entity} ->
         # cerramo la subasta
-        notify_subasta_finished(state.ets, state.notification, subasta.name)
+        notify_subasta_finished(state.ets, state.event_manager, subasta.name)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
@@ -90,10 +90,26 @@ defmodule Plataforma do
     case lookup_ets(state.ets, key) do
       {:ok, entity} ->
         :ets.delete(state.ets, key)
-        notify_cancel(state.ets, state.notification, name)
+        notify_cancel(state.ets, state.event_manager, name)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
+    end
+  end
+
+  def handle_cast({:ofertar, {name, price, offerer}}, state) do
+      case lookup_ets(state.ets, {name, :subasta}) do
+        {:ok, subasta} ->
+          if price <= subasta.price do
+            GenEvent.notify(state.event_manager, {:offer_too_low, offerer})
+            {:noreply, state}
+          else
+            update_price(state.ets, name, price, offerer)
+            notify_ofertas(state.ets, state.event_manager, name, price, offerer)
+            {:noreply, state}
+          end
+        :not_found ->
+          {:noreply, state}
     end
   end
 
@@ -108,22 +124,6 @@ defmodule Plataforma do
         {:reply, {:ok, entity}, state}
       :not_found ->
         {:reply, :not_found, state}
-    end
-  end
-
-  def handle_cast({:ofertar, {name, price, offerer}}, state) do
-      case lookup_ets(state.ets, {name, :subasta}) do
-        {:ok, subasta} ->
-          if price <= subasta.price do
-            GenEvent.notify(state.notification, {:offer_too_low, offerer})
-            {:noreply, state}
-          else
-            update_price(state.ets, name, price, offerer)
-            notify_ofertas(state.ets, state.notification, name, price, offerer)
-            {:noreply, state}
-          end
-        :not_found ->
-          {:noreply, state}
     end
   end
 

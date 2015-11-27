@@ -1,26 +1,13 @@
 defmodule Comunicator do
   use GenServer
 
-  ## Client API
-
-  def start_link(plataforma, opts \\ []) do
-    GenServer.start_link(__MODULE__, plataforma, opts)
-  end
-
-  ## Server Callbacks
-
-  def init(plataforma) do
-    IO.puts "Comunicator inits"
-    {:ok, %{plataforma: plataforma, connected: false}}
-  end
-
-  def handle_cast({:message, message}, state) do
+  def handle_event({:message, message}, state) do
     IO.puts "me llego un mensaje al comunicator #{message}"
     GenServer.cast(state.plataforma, message)
     {:noreply, state}
   end
 
-  def handle_cast({:send, mensaje}, state) do
+  def handle_event({:send, mensaje}, state) do
     if !state.connected do
       case Node.connect(get_node) do
         true ->
@@ -41,7 +28,7 @@ defmodule Comunicator do
     end
   end
 
-  def handle_cast({:nodedown, :node}, state) do
+  def handle_event({:nodedown, :node}, state) do
     IO.puts "Se cayo el nodo!"
     GenServer.cast(state.plataforma, {:mode, :secondaty})
     {:noreply, %{state | connected: false}}
