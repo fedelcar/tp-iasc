@@ -47,14 +47,20 @@ defmodule Plataforma do
   end
 
   def handle_cast({:create_comprador, {name, value}}, state) do
-    key = {name, :comprador}
-    case lookup_ets(state.ets, key) do
-      {:ok, entity} ->
-        {:noreply, state}
-      :not_found ->
-        :ets.insert(state.ets, {key, value})
-        {:noreply, state}
+    if state.mode == :primary do
+      key = {name, :comprador}
+      case lookup_ets(state.ets, key) do
+        {:ok, entity} ->
+          {:noreply, state}
+        :not_found ->
+          :ets.insert(state.ets, {key, value})
+          {:noreply, state}
+      end
+      GenEvent.notify(state.event_manager, {:create_comprador, {name, value}})
+    else
+      {:noreply, state}
     end
+
   end
 
   def handle_cast({:create_subasta, {name, value}}, state) do
@@ -68,7 +74,7 @@ defmodule Plataforma do
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
         GenEvent.notify(pid, {:new_subasta, value})
-        notify_subastas(state.ets, state.event_manager, name)
+        notify_subastas(state, name, value)
         {:noreply, state}
     end
   end
@@ -105,7 +111,7 @@ defmodule Plataforma do
             {:noreply, state}
           else
             update_price(state.ets, name, price, offerer)
-            notify_ofertas(state.ets, state.event_manager, name, price, offerer)
+            notify_ofertas(state, name, price, offerer)
             {:noreply, state}
           end
         :not_found ->
@@ -143,17 +149,20 @@ defmodule Plataforma do
     :ets.insert(ets, {key, %{subasta | price: new_price, offerer: offerer}})
   end
 
-  def notify_subastas(ets, pid, subasta) do
-    compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores,
-      fn(result) ->
-        case result do
-          [_,comprador] ->
-            GenEvent.notify(pid, {:new_subasta, comprador.name, subasta})
-            :ok
+  def notify_subastas(state, subasta, value) do
+    if state.mode == :primary do
+      compradores = :ets.match(state.ets, {{:"$1",:comprador}, :"$2"})
+      Enum.map(compradores,
+        fn(result) ->
+          case result do
+            [_,comprador] ->
+              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, subasta})
+              :ok
+          end
         end
-      end
-    )
+      )
+      GenEvent.notify(state.event_manager, {:create_subasta, {subasta.name, value}})
+    end
   end
 
   def notify_subasta_finished(ets, pid, subasta) do
@@ -169,21 +178,24 @@ defmodule Plataforma do
     )
   end
 
-  def notify_ofertas(ets, pid, subasta, price, offerer) do
-    compradores = :ets.match(ets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores,
-      fn(result) ->
-        case result do
-          [_,comprador] ->
-            if comprador.name == offerer do
-              GenEvent.notify(pid, {:oferta_aceptada, comprador.name, subasta, price})
-            else
-              GenEvent.notify(pid, {:oferta, comprador.name, subasta, price, offerer})
-            end
-            :ok
+  def notify_ofertas(state, subasta, price, offerer) do
+    if state.mode == :primary do
+      compradores = :ets.match(state.ets, {{:"$1",:comprador}, :"$2"})
+      Enum.map(compradores,
+        fn(result) ->
+          case result do
+            [_,comprador] ->
+              if comprador.name == offerer do
+                GenEvent.notify(state.event_manager, {:oferta_aceptada, comprador.name, subasta, price})
+              else
+                GenEvent.notify(state.event_manager, {:oferta, comprador.name, subasta, price, offerer})
+              end
+              :ok
+          end
         end
-      end
-    )
+      )
+      GenEvent.notify(state.event_manager, {:ofertar, subasta.name, price, offerer})
+    end
   end
 
   def notify_cancel(ets, pid, subasta) do
