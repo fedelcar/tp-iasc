@@ -29,7 +29,7 @@ defmodule Comunicator do
 
   def handle_info({:nodedown, node}, state) do
     if get_node == node do 
-      GenServer.cast(state.plataforma, {:mode, :secondaty})
+      GenServer.cast(state.plataforma, {:mode, :primary})
     end
     {:ok, %{state | :connected => false}}
   end
