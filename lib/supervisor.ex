@@ -16,7 +16,6 @@ defmodule Plataforma.Supervisor do
     :dets.open_file(@dets_alias, [file: @name_dets_file, type: :bag])
 
     {:ok, pid} = GenEvent.start_link([name: @name_event_handler])
-    GenEvent.add_mon_handler(@name_event_handler, Notification, self())
     GenEvent.add_mon_handler(@name_event_handler, Comunicator, @name_plataforma)
 
     children = [
