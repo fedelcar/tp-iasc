@@ -7,12 +7,13 @@ defmodule Controller do
 
   #Subastas endpoint
 
-  def handle(:GET, [<<"subastas">>, name], _req) do
-    case Plataforma.lookup_subasta(Plataforma, name) do
+  def handle(:GET, [<<"subastas">>, id], _req) do
+    case Plataforma.lookup_subasta(Plataforma, id) do
       {:ok, subasta} ->
         {:ok, [{"Content-type", "application/json"}],
           "{\"name\":\"#{subasta.name}\", \"price\":\"#{subasta.price}\",
-          \"duration\":\"#{subasta.duration}\", \"offerer\":\"#{subasta.offerer}\"}"}
+          \"duration\":\"#{subasta.duration}\", \"offerer\":\"#{subasta.offerer}\",
+          \"id\":\"#{subasta.id}\"}"}
       _ ->
         {404, [], "not found"}
     end
@@ -22,8 +23,13 @@ defmodule Controller do
     case JSON.decode(:elli_request.body(req)) do
       {:ok, %{"name" => name, "base_price" => base_price, "duration" => duration}} ->
         if(is_number(base_price) && is_number(duration)) do
-          Plataforma.create_subasta(Plataforma, name, base_price, duration)
-          {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+          id = UUID.uuid1()
+          Plataforma.create_subasta(Plataforma, id, name, base_price, duration)
+          {:ok, subasta} = Plataforma.lookup_subasta(Plataforma, id)
+          {:ok, [{"Content-type", "application/json"}],
+          "{\"name\":\"#{subasta.name}\", \"price\":\"#{subasta.price}\",
+          \"duration\":\"#{subasta.duration}\", \"offerer\":\"#{subasta.offerer}\",
+          \"id\":\"#{subasta.id}\"}"}
         else
           {400, [], "Bad Request"}
         end
@@ -32,14 +38,9 @@ defmodule Controller do
     end
   end
 
-  def handle(:POST, [<<"subastas">>, <<"cancelar">>], req) do
-    case JSON.decode(:elli_request.body(req)) do
-      {:ok, %{"name" => name}} ->
-        Plataforma.cancelar_subasta(Plataforma, name)
-        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
-      _ ->
-      {400, [], "Bad Request"}
-    end
+  def handle(:POST, [<<"subastas">>, id, <<"cancelar">>], req) do
+    Plataforma.cancelar_subasta(Plataforma, id)
+    {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
   end
 
   def handle(:POST, [<<"subastas">>, <<"ofertar">>], req) do
@@ -61,17 +62,21 @@ defmodule Controller do
   def handle(:POST, [<<"compradores">>], req) do
     case JSON.decode(:elli_request.body(req)) do
       {:ok, %{"name" => name, "contacto" => contacto}} ->
-        Plataforma.create_comprador(Plataforma, name, contacto)
-        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+        id = UUID.uuid1()
+        Plataforma.create_comprador(Plataforma, id, name, contacto)
+        {:ok, comprador} = Plataforma.lookup_comprador(Plataforma, id)
+        {:ok, [{"Content-type", "application/json"}],
+         "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\", \"id\":\"#{comprador.id}\"}"}
       _ ->
         {400, [], "Bad Request"}
     end
   end
 
-  def handle(:GET, [<<"compradores">>, name], _req) do
-    case Plataforma.lookup_comprador(Plataforma, name) do
+  def handle(:GET, [<<"compradores">>, id], _req) do
+    case Plataforma.lookup_comprador(Plataforma, id) do
       {:ok, comprador} ->
-        {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
+        {:ok, [{"Content-type", "application/json"}],
+         "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\", \"id\":\"#{comprador.id}\"}"}
       _ ->
         {404, [], "not found"}
     end

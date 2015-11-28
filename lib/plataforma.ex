@@ -7,24 +7,24 @@ defmodule Plataforma do
     GenServer.start_link(__MODULE__, {dets, event_manager}, opts)
   end
 
-  def lookup_subasta(server, name) do
-    key = {name, :subasta}
+  def lookup_subasta(server, id) do
+    key = {id, :subasta}
     GenServer.call(server, {:lookup, key})
   end
 
-  def create_subasta(server, name, base_price, duration) do
+  def create_subasta(server, id, name, base_price, duration) do
     GenServer.cast(server,
-      {:create_subasta, {name, %Subasta{name: name, price: base_price, duration: duration, offerer: :no_offered_yet}}})
+      {:create_subasta, %Subasta{id: id, name: name, price: base_price, duration: duration, offerer: :no_offered_yet}})
   end
 
-  def lookup_comprador(server, name) do
-    key = {name, :comprador}
+  def lookup_comprador(server, id) do
+    key = {id, :comprador}
     GenServer.call(server, {:lookup, key})
   end
 
-  def create_comprador(server, name, contacto) do
+  def create_comprador(server, id, name, contacto) do
     GenServer.cast(server,
-      {:create_comprador, {name, %Comprador{name: name, contacto: contacto}}})
+      {:create_comprador, {id, %Comprador{id: id, name: name, contacto: contacto}}})
   end
 
   def ofertar(server, name, price, offerer) do
@@ -46,15 +46,15 @@ defmodule Plataforma do
     {:ok, %{event_manager: event_manager, dets: dets, mode: Application.get_env(:subastas, :mode)}}
   end
 
-  def handle_cast({:create_comprador, {name, value}}, state) do
+  def handle_cast({:create_comprador, {id, comprador}}, state) do
     if state.mode == :primary do
-      key = {name, :comprador}
+      key = {id, :comprador}
       case lookup_dets(state.dets, key) do
         {:ok, entity} ->
           {:noreply, state}
         :not_found ->
-          :dets.insert(state.dets, {key, value})
-          GenEvent.notify(state.event_manager, {:send, {:create_comprador, {name, value}}})
+          :dets.insert(state.dets, {key, comprador})
+          GenEvent.notify(state.event_manager, {:send, {:create_comprador, {id, comprador}}})
           {:noreply, state}
       end
     else
@@ -62,21 +62,20 @@ defmodule Plataforma do
     end
   end
 
-  def handle_cast({:create_subasta, {name, value}}, state) do
-    key = {name, :subasta}
+  def handle_cast({:create_subasta, subasta}, state) do
+    key = {subasta.id, :subasta}
     case lookup_dets(state.dets, key) do
       {:ok, entity} ->
         {:noreply, state}
       :not_found ->
-        :dets.insert(state.dets, {key, value})
-
+        :dets.insert(state.dets, {key, subasta})
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
         if state.mode == :primary do
-          GenEvent.notify(pid, {:new_subasta, value})
-          notify_subastas(state, name, value)
+          GenEvent.notify(pid, {:new_subasta, subasta})
+          notify_subastas(state, subasta)
         else
-          GenEvent.notify(pid, {:new_subasta,  %{value | duration: value.duration + 5}})
+          GenEvent.notify(pid, {:new_subasta,  %{subasta | duration: subasta.duration + 5}})
         end
         {:noreply, state}
     end
@@ -162,19 +161,19 @@ defmodule Plataforma do
     :dets.insert(dets, {key, %{subasta | price: new_price, offerer: offerer}})
   end
 
-  def notify_subastas(state, subasta, value) do
+  def notify_subastas(state, subasta) do
     if state.mode == :primary do
       compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
       Enum.map(compradores,
         fn(result) ->
           case result do
             [_,comprador] ->
-              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, subasta})
+              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, subasta.name})
               :ok
           end
         end
       )
-      GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta, value}}})
+      GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta.id, subasta}}})
     end
   end
 

@@ -34,6 +34,7 @@ defmodule Subastas.Mixfile do
   # Type `mix help deps` for more examples and options
   defp deps do
     [{:elli, github: "knutin/elli"},
-     {:json,   "~> 0.3.0"}]
+     {:json,   "~> 0.3.0"},
+    { :uuid, "~> 1.1" }]
   end
 end

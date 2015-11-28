@@ -1,3 +1,3 @@
 defmodule Comprador do
-  defstruct name: :not_defined, contacto: :not_defined
+  defstruct id: :not_defined, name: :not_defined, contacto: :not_defined
 end
