@@ -2,14 +2,12 @@ defmodule Controller do
   @behaviour :elli_handler
 
   def handle(elli_req, _args) do
-    req = Elli.HTTPRequest.new elli_req
-    handle(req.method, req.path, req)
+    handle(:elli_request.method(elli_req), :elli_request.path(elli_req), elli_req)
   end
 
   #Subastas endpoint
 
-  def handle(:GET, [<<"subastas">>], req) do
-    name = req.get_arg("name")
+  def handle(:GET, [<<"subastas">>, name], _req) do
     case Plataforma.lookup_subasta(Plataforma, name) do
       {:ok, subasta} ->
         {:ok, [{"Content-type", "application/json"}],
@@ -21,20 +19,21 @@ defmodule Controller do
   end
 
   def handle(:POST, [<<"subastas">>], req) do
-    case JSON.decode(req.body) do
+    case JSON.decode(:elli_request.body(req)) do
       {:ok, %{"name" => name, "base_price" => base_price, "duration" => duration}} ->
         if(is_number(base_price) && is_number(duration)) do
           Plataforma.create_subasta(Plataforma, name, base_price, duration)
           {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
         else
           {400, [], "Bad Request"}
+        end
       _ ->
         {400, [], "Bad Request"}
     end
   end
 
   def handle(:POST, [<<"subastas">>, <<"cancelar">>], req) do
-    case JSON.decode(req.body) do
+    case JSON.decode(:elli_request.body(req)) do
       {:ok, %{"name" => name}} ->
         Plataforma.cancelar_subasta(Plataforma, name)
         {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
@@ -44,24 +43,23 @@ defmodule Controller do
   end
 
   def handle(:POST, [<<"subastas">>, <<"ofertar">>], req) do
-    case JSON.decode(req.body) do
+    case JSON.decode(:elli_request.body(req)) do
       {:ok, %{"subasta" => subasta_name, "comprador" => comprador_name, "precio" => precio}} ->
-        if(is_number(base_price) do
+        if (is_number(precio)) do
           Plataforma.ofertar(Plataforma, subasta_name, precio, comprador_name)
           {:ok, [{"Content-type", "application/json"}], "{\"status\":\"ok\"}"}
         else
           {400, [], "Bad Request"}
         end
       _ ->
-        {_, nil, _} -> 
-          {400, [], "Bad Request"}
+        {400, [], "Bad Request"}
     end
   end
 
   #Compradores endpoint
 
   def handle(:POST, [<<"compradores">>], req) do
-    case JSON.decode(req.body) do
+    case JSON.decode(:elli_request.body(req)) do
       {:ok, %{"name" => name, "contacto" => contacto}} ->
         Plataforma.create_comprador(Plataforma, name, contacto)
         {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
@@ -70,8 +68,7 @@ defmodule Controller do
     end
   end
 
-  def handle(:GET, [<<"compradores">>], req) do
-    name = req.get_arg("name")
+  def handle(:GET, [<<"compradores">>, name], _req) do
     case Plataforma.lookup_comprador(Plataforma, name) do
       {:ok, comprador} ->
         {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
@@ -137,17 +134,5 @@ defmodule Controller do
     :error_logger.error_msg("exception: ~p~nstack: ~p~nrequest: ~p~n",
                            [exception, stack, :elli_request.to_proplist(req)])
     :ok
-  end
-
-  # parsed body
-
-  def parse_body(req) do
-    list = Enum.filter(String.split(req.body, "&"), fn(x) -> x != "" end)
-    List.foldl(list, %{}, fn (x, m) -> add_to_map(x, m) end)
-  end
-
-  def add_to_map(x, map) do
-    list = String.split(x, "=")
-    Map.put(map, List.first(list), List.last(list))
   end
 end
