@@ -34,7 +34,8 @@ defmodule Escenario5Test do
 
   test "Escenario 5", %{plataforma: plataforma} do
 
-    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 1} 
+    subasta1 = %Subasta{name: "se vende heladera", price: 10, duration: 1} 
+    subasta2 = %Subasta{name: "vendo auto", price: 100, duration: 3} 
 
     # Se registran dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
@@ -42,8 +43,8 @@ defmodule Escenario5Test do
 
     # Nueva subasta y notifiación a todos de la misma
     Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "arya stark", subasta}
-    assert_receive {:new_subasta, "john snow", subasta}
+    assert_receive {:new_subasta, "arya stark", subasta1}
+    assert_receive {:new_subasta, "john snow", subasta1}
 
     # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
@@ -52,8 +53,8 @@ defmodule Escenario5Test do
 
     # Otra subasta y notifiación a todos de la misma
     Plataforma.create_subasta(plataforma, "vendo auto", 100, 3)
-    assert_receive {:new_subasta, "arya stark", "vendo auto"}
-    assert_receive {:new_subasta, "john snow", "vendo auto"}
+    assert_receive {:new_subasta, "arya stark", subasta2}
+    assert_receive {:new_subasta, "john snow", subasta2}
 
     # Nueva oferta para la nueva subasta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "vendo auto", 150, "john snow")
@@ -69,30 +70,31 @@ defmodule Escenario5Test do
     :timer.sleep(1000)
 
     # Notificacion a los clientes de la subasta finalizada
-    subasta_offered = %Subasta{subasta | offerer: "arya stark"}
-    assert_receive {:subasta_finished, "john snow", "se vende heladera"}
-    assert_receive {:subasta_finished, "arya stark", "se vende heladera"}
+    subasta_offered1 = %Subasta{subasta1 | offerer: "arya stark", price: 200}
+    assert_receive {:subasta_finished, "john snow", subasta_offered1}
+    assert_receive {:subasta_finished, "arya stark", subasta_offered}
 
     # Corroboramos quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
-    assert subasta.name == "se vende heladera"
-    assert subasta.price == 200
-    assert subasta.duration == 1
-    assert subasta.offerer == "arya stark"
+    assert subasta.name == subasta_offered1.name
+    assert subasta.price == subasta_offered1.price
+    assert subasta.duration == subasta_offered1.duration
+    assert subasta.offerer == subasta_offered1.offerer
 
     # Esperamos a que termine la segunda subasta
     :timer.sleep(2000)
 
     # Notificacion a los clientes de la subasta finalizada
-    assert_receive {:subasta_finished, "john snow", "vendo auto"}
-    assert_receive {:subasta_finished, "arya stark", "vendo auto"}
+    subasta_offere2 = %Subasta{subasta2 | offerer: "john snow", price: 150}
+    assert_receive {:subasta_finished, "john snow", subasta_offere2}
+    assert_receive {:subasta_finished, "arya stark",subasta_offere2}
     assert_receive {:send, {:cerrar, "se vende heladera"}} ## Comunicator received for forward
 
     # Corroboramos quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "vendo auto")
-    assert subasta.name == "vendo auto"
-    assert subasta.price == 150
-    assert subasta.duration == 3
-    assert subasta.offerer == "john snow"
+    assert subasta.name == subasta_offere2.name
+    assert subasta.price == subasta_offere2.price
+    assert subasta.duration == subasta_offere2.duration
+    assert subasta.offerer == subasta_offere2.offerer
   end
 end
