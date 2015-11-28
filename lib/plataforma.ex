@@ -69,7 +69,7 @@ defmodule Plataforma do
 
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
-        if state.mode == :primary do
+        if is_primary(state) do
           GenEvent.notify(pid, {:new_subasta, value})
           notify_subastas(state, name, value)
         else
@@ -168,81 +168,69 @@ defmodule Plataforma do
   end
 
   def notify_subastas(state, subasta, value) do
-    if state.mode == :primary do
+    if (is_primary(state)) do
       compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
       Enum.map(compradores,
         fn(result) ->
           case result do
             [_,comprador] ->
-              if(is_primary(state)) do
-                GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, value})
-              end
+              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, value})
               :ok
           end
         end
       )
-      if(is_primary(state)) do
-        GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta, value}}})
-      end
+      GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta, value}}})
     end
   end
 
   def notify_subasta_finished(state, subasta) do
-    compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores,
-      fn(result) ->
-        case result do
-          [_,comprador] ->
-            if(is_primary(state)) do
-              GenEvent.notify(state.event_manager, {:subasta_finished, comprador.name, subasta})
-            end
-            :ok
-        end
-      end
-    )
     if(is_primary(state)) do
+      compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
+      Enum.map(compradores,
+        fn(result) ->
+          case result do
+            [_,comprador] ->
+              GenEvent.notify(state.event_manager, {:subasta_finished, comprador.name, subasta})
+              :ok
+          end
+        end
+      )
       GenEvent.notify(state.event_manager, {:send, {:cerrar, subasta.name}})
     end
   end
 
   def notify_ofertas(state, subasta, price, offerer) do
-    if state.mode == :primary do
+    if (is_primary(state)) do
       compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
       Enum.map(compradores,
         fn(result) ->
           case result do
             [_,comprador] ->
-              if(is_primary(state)) do
-                if comprador.name == offerer do
-                  GenEvent.notify(state.event_manager, {:oferta_aceptada, comprador.name, subasta, price})
-                else
-                  GenEvent.notify(state.event_manager, {:oferta, comprador.name, subasta, price, offerer})
-                end
+              if comprador.name == offerer do
+                GenEvent.notify(state.event_manager, {:oferta_aceptada, comprador.name, subasta, price})
+              else
+                GenEvent.notify(state.event_manager, {:oferta, comprador.name, subasta, price, offerer})
               end
               :ok
           end
         end
       )
-      if(is_primary(state)) do
-        GenEvent.notify(state.event_manager, {:send, {:ofertar, subasta, price, offerer}})
-      end
+      GenEvent.notify(state.event_manager, {:send, {:ofertar, subasta, price, offerer}})
     end
   end
 
   def notify_cancel(state, subasta) do
-    compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
-    Enum.map(compradores,
-      fn(result) ->
-        case result do
-          [_,comprador] ->
-            if(is_primary(state)) do
+    if (is_primary(state)) do
+      compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
+      Enum.map(compradores,
+        fn(result) ->
+          case result do
+            [_,comprador] ->
               GenEvent.notify(state.event_manager, {:cancel_subasta, comprador.name, subasta})
-            end
-            :ok
+              :ok
+          end
         end
-      end
-    )
-    if(is_primary(state)) do
+      )
       GenEvent.notify(state.event_manager, {:send, {:cancel, subasta}})
     end
   end
