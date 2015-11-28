@@ -33,14 +33,17 @@ defmodule Escenario5Test do
 # funcionando cada una de ellas como siempre.
 
   test "Escenario 5", %{plataforma: plataforma} do
+
+    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 1} 
+
     # Se registran dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     # Nueva subasta y notifiación a todos de la misma
     Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "arya stark", "se vende heladera"}
-    assert_receive {:new_subasta, "john snow", "se vende heladera"}
+    assert_receive {:new_subasta, "arya stark", subasta}
+    assert_receive {:new_subasta, "john snow", subasta}
 
     # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
@@ -66,6 +69,7 @@ defmodule Escenario5Test do
     :timer.sleep(1000)
 
     # Notificacion a los clientes de la subasta finalizada
+    subasta_offered = %Subasta{subasta | offerer: "arya stark"}
     assert_receive {:subasta_finished, "john snow", "se vende heladera"}
     assert_receive {:subasta_finished, "arya stark", "se vende heladera"}
 

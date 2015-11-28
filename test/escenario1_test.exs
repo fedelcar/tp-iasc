@@ -67,7 +67,7 @@ defmodule Escenario1Test do
     :timer.sleep(1000)
 
     # Notificacion a los clientes de la subasta finalizada
-    subasta_offered = %Subasta{subasta | offerer: "john snow"}
+    subasta_offered = %Subasta{subasta | offerer: "john snow", price: 15}
     assert_receive {:subasta_finished, "john snow",  subasta_offered}
     assert_receive {:subasta_finished, "arya stark", subasta_offered}
 
