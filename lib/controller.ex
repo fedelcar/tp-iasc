@@ -18,6 +18,18 @@ defmodule Controller do
     end
   end
 
+  def handle(:POST, [<<"subastas">>, <<"cancelar">>], req) do
+    map = parse_body(req)
+    name = Map.get(map, "name")
+
+    if name do
+      Plataforma.cancelar_subasta(Plataforma, name)
+      {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
+    else
+      {400, [], "Bad Request"}
+    end
+  end
+
   def handle(:GET, [<<"compradores">>], req) do
     name = req.get_arg("name")
     case Plataforma.lookup_comprador(Plataforma, name) do
