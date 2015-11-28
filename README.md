@@ -1,12 +1,25 @@
 Subastas - TP IASC
 ===================
 
+## Resumen de la arquitectura
+Hay dos modos para iniciar cada nodo: :primary y :secondary.
+
+Cuando el nodo es primario, replica sus mensajes hacia el nodo que esta conectado a él mismo.
+
+Si está en modo secundario, no replica sus mensajes, pero si el mismo ve que se cae el primario, asume su rol.
+
+Puede haber mas de un nodo en modo primario, los mensajes se van replicando entre ellos.
+
+Para iniciar el nodo: ```iex --name fede@192.168.1.101 --cookie galleta -S mix``` (la cookie debe ser la misma para que se conozcan los nodos entre si)
+
+Configurar el modo inicial y a quién se conecta en ```mix.exs```
+
+## Tests
 Hay un test por cada escenario descripto.
 Correrlos con ```mix test```.
 
-
 # Endpoints de la API
-Dafault port: 3001 (o configurar el deseado en ```mix.exs```)
+Default port: 3001 (o configurar el deseado en ```mix.exs```)
 
 ## Subastas
 ### POST /subastas - Crear Subasta
