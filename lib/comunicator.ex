@@ -22,7 +22,7 @@ defmodule Comunicator do
           {:ok, %{state | :connected => false}}
       end
     else
-      GenServer.cast({__MODULE__, get_node}, {:message, mensaje})
+      GenServer.cast({state.plataforma, get_node}, {:message, mensaje})
       {:ok, state}
     end
   end

@@ -66,7 +66,6 @@ defmodule Plataforma do
         {:noreply, state}
       :not_found ->
         :dets.insert(state.dets, {key, value})
-
         {:ok, pid} = GenEvent.start_link
         GenEvent.add_mon_handler(pid, SubastaFinisher, self())
         if is_primary(state) do
