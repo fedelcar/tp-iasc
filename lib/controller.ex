@@ -23,8 +23,11 @@ defmodule Controller do
   def handle(:POST, [<<"subastas">>], req) do
     case JSON.decode(req.body) do
       {:ok, %{"name" => name, "base_price" => base_price, "duration" => duration}} ->
-        Plataforma.create_subasta(Plataforma, name, base_price, duration)
-        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+        if(is_number(base_price) && is_number(duration)) do
+          Plataforma.create_subasta(Plataforma, name, base_price, duration)
+          {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+        else
+          {400, [], "Bad Request"}
       _ ->
         {400, [], "Bad Request"}
     end
@@ -32,11 +35,26 @@ defmodule Controller do
 
   def handle(:POST, [<<"subastas">>, <<"cancelar">>], req) do
     case JSON.decode(req.body) do
-      %{"name" => name} ->
+      {:ok, %{"name" => name}} ->
         Plataforma.cancelar_subasta(Plataforma, name)
         {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
       _ ->
       {400, [], "Bad Request"}
+    end
+  end
+
+  def handle(:POST, [<<"subastas">>, <<"ofertar">>], req) do
+    case JSON.decode(req.body) do
+      {:ok, %{"subasta" => subasta_name, "comprador" => comprador_name, "precio" => precio}} ->
+        if(is_number(base_price) do
+          Plataforma.ofertar(Plataforma, subasta_name, precio, comprador_name)
+          {:ok, [{"Content-type", "application/json"}], "{\"status\":\"ok\"}"}
+        else
+          {400, [], "Bad Request"}
+        end
+      _ ->
+        {_, nil, _} -> 
+          {400, [], "Bad Request"}
     end
   end
 
@@ -59,23 +77,6 @@ defmodule Controller do
         {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
       _ ->
         {404, [], "not found"}
-    end
-  end
-
-  def handle(:POST, [<<"subastas">>, <<"ofertar">>], req) do
-    map = parse_body(req)
-    subasta_name = Map.get(map, "subasta")
-    comprador_name = Map.get(map, "comprador")
-    precio_str = Map.get(map, "precio")
-
-    case {subasta_name, comprador_name, precio_str} do
-      {nil, _, _} -> {400, [], "Bad Request"}
-      {_, nil, _} -> {400, [], "Bad Request"}
-      {_, _, nil} -> {400, [], "Bad Request"}
-      {subasta_name, comprador_name, precio} ->
-        {precio, _} = Integer.parse(precio_str)
-        Plataforma.ofertar(Plataforma, subasta_name, precio, comprador_name)
-        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"ok\"}"}
     end
   end
 
