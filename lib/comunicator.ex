@@ -4,7 +4,7 @@ defmodule Comunicator do
   def init(name_plataforma) do
     IO.puts "Comunicator started"
     {:ok, %{plataforma: name_plataforma, connected: false}}
-  end 
+  end
 
   def handle_event({:send, mensaje}, state) do
     if !state.connected do
@@ -16,19 +16,19 @@ defmodule Comunicator do
           {:ok, %{state | :connected => true}}
         false ->
           IO.puts "conexion fallida con el node #{get_node}"
-          {:ok, %{state | :connected => false}} 
-        :ignored ->  
+          {:ok, %{state | :connected => false}}
+        :ignored ->
           IO.puts "conexion ignorada"
           {:ok, %{state | :connected => false}}
       end
     else
       GenServer.cast({__MODULE__, get_node}, {:message, mensaje})
-      {:ok, state} 
+      {:ok, state}
     end
   end
 
   def handle_info({:nodedown, node}, state) do
-    if get_node == node do 
+    if get_node == node do
       GenServer.cast(state.plataforma, {:mode, :primary})
     end
     {:ok, %{state | :connected => false}}
@@ -39,7 +39,7 @@ defmodule Comunicator do
   end
 
   #Handlers
-  
+
   def handle_event({:new_subasta, receptor, subasta}, state) do
     IO.puts "message to #{receptor}: Se ha creado la subasta #{subasta}"
     {:ok, state}
@@ -61,7 +61,7 @@ defmodule Comunicator do
   end
 
   def handle_event({:subasta_finished, receptor, subasta}, state) do
-    IO.puts "message to #{receptor}: Subasta #{subasta} ha finalizado"
+    IO.puts "message to #{receptor}: Subasta #{subasta.name} ha finalizado. Ganador: #{subasta.offerer}"
     {:ok, state}
   end
 

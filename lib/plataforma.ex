@@ -87,7 +87,7 @@ defmodule Plataforma do
     case lookup_dets(state.dets, key) do
       {:ok, entity} ->
         # cerramo la subasta
-        notify_subasta_finished(state.dets, state.event_manager, subasta.name)
+        notify_subasta_finished(state.dets, state.event_manager, subasta)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
@@ -184,7 +184,7 @@ defmodule Plataforma do
       fn(result) ->
         case result do
           [_,comprador] ->
-            GenEvent.notify(pid, {:subasta_finished, comprador.name, subasta.name})
+            GenEvent.notify(pid, {:subasta_finished, comprador.name, subasta})
             :ok
         end
       end
