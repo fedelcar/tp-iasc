@@ -42,7 +42,6 @@ defmodule Plataforma do
   ## Server Callbacks
 
   def init({dets, event_manager}) do
-    GenEvent.add_mon_handler(event_manager, Notification, self())
     {:ok, %{event_manager: event_manager, dets: dets, mode: Application.get_env(:subastas, :mode)}}
   end
 
@@ -53,7 +52,9 @@ defmodule Plataforma do
         {:noreply, state}
       :not_found ->
         :dets.insert(state.dets, {key, value})
-        GenEvent.notify(state.event_manager, {:send, {:create_comprador, {name, value}}})
+        if(is_primary(state)) do
+          GenEvent.notify(state.event_manager, {:send, {:create_comprador, {name, value}}})
+        end
         {:noreply, state}
     end
   end
@@ -84,7 +85,7 @@ defmodule Plataforma do
       {:ok, entity} ->
         # cerramo la subasta
         {:ok, subasta} = lookup_dets(state.dets, {subasta_name, :subasta})
-        notify_subasta_finished(state.dets, state.event_manager, subasta)
+        notify_subasta_finished(state, subasta)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
@@ -96,7 +97,7 @@ defmodule Plataforma do
     case lookup_dets(state.dets, key) do
       {:ok, entity} ->
         :dets.delete(state.dets, key)
-        notify_cancel(state.dets, state.event_manager, name)
+        notify_cancel(state, name)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
@@ -107,7 +108,9 @@ defmodule Plataforma do
       case lookup_dets(state.dets, {name, :subasta}) do
         {:ok, subasta} ->
           if price <= subasta.price do
-            GenEvent.notify(state.event_manager, {:offer_too_low, offerer, price, name})
+            if(is_primary(state)) do
+              GenEvent.notify(state.event_manager, {:offer_too_low, offerer, price, name})
+            end
             {:noreply, state}
           else
             update_price(state.dets, name, price, offerer)
@@ -146,6 +149,10 @@ defmodule Plataforma do
 
   # helper functions
 
+  def is_primary(state) do
+    state.mode == :primary
+  end
+
   def lookup_dets(dets, key) do
     case :dets.lookup(dets, key) do
       [{key, entity}] -> {:ok, entity}
@@ -167,27 +174,35 @@ defmodule Plataforma do
         fn(result) ->
           case result do
             [_,comprador] ->
-              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, value})
+              if(is_primary(state)) do
+                GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, value})
+              end
               :ok
           end
         end
       )
-      GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta, value}}})
+      if(is_primary(state)) do
+        GenEvent.notify(state.event_manager, {:send, {:create_subasta, {subasta, value}}})
+      end
     end
   end
 
-  def notify_subasta_finished(dets, pid, subasta) do
-    compradores = :dets.match(dets, {{:"$1",:comprador}, :"$2"})
+  def notify_subasta_finished(state, subasta) do
+    compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
     Enum.map(compradores,
       fn(result) ->
         case result do
           [_,comprador] ->
-            GenEvent.notify(pid, {:subasta_finished, comprador.name, subasta})
+            if(is_primary(state)) do
+              GenEvent.notify(state.event_manager, {:subasta_finished, comprador.name, subasta})
+            end
             :ok
         end
       end
     )
-    GenEvent.notify(pid, {:send, {:cerrar, subasta.name}})
+    if(is_primary(state)) do
+      GenEvent.notify(state.event_manager, {:send, {:cerrar, subasta.name}})
+    end
   end
 
   def notify_ofertas(state, subasta, price, offerer) do
@@ -197,30 +212,38 @@ defmodule Plataforma do
         fn(result) ->
           case result do
             [_,comprador] ->
-              if comprador.name == offerer do
-                GenEvent.notify(state.event_manager, {:oferta_aceptada, comprador.name, subasta, price})
-              else
-                GenEvent.notify(state.event_manager, {:oferta, comprador.name, subasta, price, offerer})
+              if(is_primary(state)) do
+                if comprador.name == offerer do
+                  GenEvent.notify(state.event_manager, {:oferta_aceptada, comprador.name, subasta, price})
+                else
+                  GenEvent.notify(state.event_manager, {:oferta, comprador.name, subasta, price, offerer})
+                end
               end
               :ok
           end
         end
       )
-      GenEvent.notify(state.event_manager, {:send, {:ofertar, subasta, price, offerer}})
+      if(is_primary(state)) do
+        GenEvent.notify(state.event_manager, {:send, {:ofertar, subasta, price, offerer}})
+      end
     end
   end
 
-  def notify_cancel(dets, pid, subasta) do
-    compradores = :dets.match(dets, {{:"$1",:comprador}, :"$2"})
+  def notify_cancel(state, subasta) do
+    compradores = :dets.match(state.dets, {{:"$1",:comprador}, :"$2"})
     Enum.map(compradores,
       fn(result) ->
         case result do
           [_,comprador] ->
-            GenEvent.notify(pid, {:cancel_subasta, comprador.name, subasta})
+            if(is_primary(state)) do
+              GenEvent.notify(state.event_manager, {:cancel_subasta, comprador.name, subasta})
+            end
             :ok
         end
       end
     )
-    GenEvent.notify(pid, {:send, {:cancel, subasta}})
+    if(is_primary(state)) do
+      GenEvent.notify(state.event_manager, {:send, {:cancel, subasta}})
+    end
   end
 end
