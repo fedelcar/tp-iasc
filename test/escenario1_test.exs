@@ -47,14 +47,16 @@ defmodule Escenario1Test do
 
   test "Escenario 1", %{plataforma: plataforma} do
 
+    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 1} 
+
     # Se registran los dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     # Nueva subasta y notifiación a todos de la misma
-    Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "arya stark", "se vende heladera"}
-    assert_receive {:new_subasta, "john snow", "se vende heladera"}
+    Plataforma.create_subasta(plataforma, subasta.name, subasta.price, subasta.duration)
+    assert_receive {:new_subasta, "arya stark", subasta}
+    assert_receive {:new_subasta, "john snow", subasta}
 
     # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
@@ -65,14 +67,15 @@ defmodule Escenario1Test do
     :timer.sleep(1000)
 
     # Notificacion a los clientes de la subasta finalizada
-    assert_receive {:subasta_finished, "john snow", "se vende heladera"}
-    assert_receive {:subasta_finished, "arya stark", "se vende heladera"}
+    subasta_offered = %Subasta{subasta | offerer: "john snow"}
+    assert_receive {:subasta_finished, "john snow",  subasta_offered}
+    assert_receive {:subasta_finished, "arya stark", subasta_offered}
 
     # Corroboramos quién ganó la subasta
-    {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
-    assert subasta.name == "se vende heladera"
-    assert subasta.price == 15
-    assert subasta.duration == 1
-    assert subasta.offerer == "john snow"
+    {:ok, subasta_received} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
+    assert subasta_received.name == subasta_offered.name
+    assert subasta_received.price == subasta_offered.price
+    assert subasta_received.duration == subasta_offered.duration
+    assert subasta_received.offerer == subasta_offered.offerer
   end
 end
