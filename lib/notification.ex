@@ -20,4 +20,9 @@ defmodule Notificacion do
     IO.puts "message to #{receptor}: Subasta #{subasta} cancelada"
     {:ok, state}
   end
+
+  def handle_event({:subasta_finished, receptor, subasta}, state) do
+    IO.puts "message to #{receptor}: Subasta #{subasta} ha finalizado"
+    {:ok, state}
+  end
 end
