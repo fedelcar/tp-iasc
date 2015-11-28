@@ -46,6 +46,23 @@ defmodule Controller do
     end
   end
 
+  def handle(:POST, [<<"subastas">>, <<"ofertar">>], req) do
+    map = parse_body(req)
+    subasta_name = Map.get(map, "subasta")
+    comprador_name = Map.get(map, "comprador")
+    precio_str = Map.get(map, "precio")
+
+    case {subasta_name, comprador_name, precio_str} do
+      {nil, _, _} -> {400, [], "Bad Request"}
+      {_, nil, _} -> {400, [], "Bad Request"}
+      {_, _, nil} -> {400, [], "Bad Request"}
+      {subasta_name, comprador_name, precio} ->
+        {precio, _} = Integer.parse(precio_str)
+        Plataforma.ofertar(Plataforma, subasta_name, precio, comprador_name)
+        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"ok\"}"}
+    end
+  end
+
   def handle(:POST, [<<"compradores">>], req) do
     map = parse_body(req)
     name = Map.get(map, "name")
