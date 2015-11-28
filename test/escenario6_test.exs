@@ -15,9 +15,9 @@ defmodule Escenario6Test do
 
   setup do
     {:ok, notification} = GenEvent.start_link
-    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :set])
 
-    {:ok, plataforma} = Plataforma.start_link(dets, notification, [])
+    {:ok, plataforma} = Plataforma.start_link(dets, notification, :primary, [])
     GenEvent.add_mon_handler(notification, Forwarder, self())
 
     on_exit fn ->
@@ -48,7 +48,7 @@ defmodule Escenario6Test do
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
 
-    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 1}
+    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 3}
     # Nueva subasta y notifiación a todos de la misma
     Plataforma.create_subasta(plataforma, subasta.name, subasta.price, subasta.duration)
     assert_receive {:send, {:create_subasta, {"se vende heladera", _}}} ## Comunicator received for forward
@@ -80,17 +80,10 @@ defmodule Escenario6Test do
     # Esperamos a que termine la subasta
     :timer.sleep(1000)
 
-    subasta_to_finish = %Subasta{subasta | offerer: "arya stark", price: 200}
+    subasta_to_finish = %Subasta{subasta | offerer: "arya stark", price: 300}
     # Notificacion a los clientes de la subasta finalizada
     assert_receive {:subasta_finished, "john snow", subasta_to_finish}
     assert_receive {:subasta_finished, "arya stark", subasta_to_finish}
-
-    # Corroboramos quién ganó la subasta
-    {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
-    assert subasta.name == "se vende heladera"
-    assert subasta.price == 300
-    assert subasta.duration == 1
-    assert subasta.offerer == "arya stark"
 
   end
 end

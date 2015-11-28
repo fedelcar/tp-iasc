@@ -13,13 +13,13 @@ defmodule Plataforma.Supervisor do
   @name_event_handler Event_Manager
 
   def init(:ok) do
-    :dets.open_file(@dets_alias, [file: @name_dets_file, type: :bag])
+    :dets.open_file(@dets_alias, [file: @name_dets_file, type: :set])
 
     {:ok, pid} = GenEvent.start_link([name: @name_event_handler])
     GenEvent.add_mon_handler(@name_event_handler, Comunicator, @name_plataforma)
 
     children = [
-      worker(Plataforma, [@dets_alias, @name_event_handler, [name: @name_plataforma]]),
+      worker(Plataforma, [@dets_alias, @name_event_handler, Application.get_env(:subastas, :mode), [name: @name_plataforma]]),
       worker(:elli, [[port: Application.get_env(:subastas, :port), callback: @name_controller]])
     ]
 

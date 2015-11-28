@@ -15,9 +15,9 @@ defmodule Escenario4Test do
 
   setup do
     {:ok, notification} = GenEvent.start_link
-    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :set])
 
-    {:ok, plataforma} = Plataforma.start_link(dets, notification, [])
+    {:ok, plataforma} = Plataforma.start_link(dets, notification, :primary, [])
     GenEvent.add_mon_handler(notification, Forwarder, self())
 
     on_exit fn ->
@@ -75,12 +75,5 @@ defmodule Escenario4Test do
     assert_receive {:subasta_finished, "john snow",  subasta_offered}
     assert_receive {:subasta_finished, "arya stark", subasta_offered}
     assert_receive {:subasta_finished, "ron damon", subasta_offered}
-
-    # Corroboramos quién ganó la subasta
-    {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
-    assert subasta.name == "se vende heladera"
-    assert subasta.price == 300
-    assert subasta.duration == 1
-    assert subasta.offerer == "ron damon"
   end
 end

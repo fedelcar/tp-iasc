@@ -3,8 +3,8 @@ defmodule Plataforma do
 
   ## Client API
 
-  def start_link(dets, event_manager, opts \\ []) do
-    GenServer.start_link(__MODULE__, {dets, event_manager}, opts)
+  def start_link(dets, event_manager, mode, opts \\ []) do
+    GenServer.start_link(__MODULE__, {dets, event_manager, mode}, opts)
   end
 
   def lookup_subasta(server, name) do
@@ -41,8 +41,8 @@ defmodule Plataforma do
 
   ## Server Callbacks
 
-  def init({dets, event_manager}) do
-    {:ok, %{event_manager: event_manager, dets: dets, mode: Application.get_env(:subastas, :mode)}}
+  def init({dets, event_manager, mode}) do
+    {:ok, %{event_manager: event_manager, dets: dets, mode: mode}}
   end
 
   def handle_cast({:create_comprador, {name, value}}, state) do

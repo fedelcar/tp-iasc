@@ -15,9 +15,9 @@ defmodule Escenario3Test do
 
   setup do
     {:ok, notification} = GenEvent.start_link
-    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :set])
 
-    {:ok, plataforma} = Plataforma.start_link(dets, notification, [])
+    {:ok, plataforma} = Plataforma.start_link(dets, notification, :primary, [])
     GenEvent.add_mon_handler(notification, Forwarder, self())
 
     on_exit fn ->

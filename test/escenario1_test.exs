@@ -15,9 +15,9 @@ defmodule Escenario1Test do
 
   setup do
     {:ok, event_manager} = GenEvent.start_link
-    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :bag])
+    {:ok, dets} = :dets.open_file(@dets_alias, [file: @dets_file_name, type: :set])
 
-    {:ok, plataforma} = Plataforma.start_link(dets, event_manager, [])
+    {:ok, plataforma} = Plataforma.start_link(dets, event_manager, :primary, [])
     GenEvent.add_mon_handler(event_manager, Forwarder, self())
 
     on_exit fn ->
@@ -70,12 +70,5 @@ defmodule Escenario1Test do
     subasta_offered = %Subasta{subasta | offerer: "john snow", price: 15}
     assert_receive {:subasta_finished, "john snow",  subasta_offered}
     assert_receive {:subasta_finished, "arya stark", subasta_offered}
-
-    # Corroboramos quién ganó la subasta
-    {:ok, subasta_received} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
-    assert subasta_received.name == subasta_offered.name
-    assert subasta_received.price == subasta_offered.price
-    assert subasta_received.duration == subasta_offered.duration
-    assert subasta_received.offerer == subasta_offered.offerer
   end
 end
