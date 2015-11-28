@@ -42,6 +42,16 @@ defmodule Controller do
 
   #Compradores endpoint
 
+  def handle(:POST, [<<"compradores">>], req) do
+    case JSON.decode(req.body) do
+      {:ok, %{"name" => name, "contacto" => contacto}} ->
+        Plataforma.create_comprador(Plataforma, name, contacto)
+        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+      _ ->
+        {400, [], "Bad Request"}
+    end
+  end
+
   def handle(:GET, [<<"compradores">>], req) do
     name = req.get_arg("name")
     case Plataforma.lookup_comprador(Plataforma, name) do
@@ -66,20 +76,6 @@ defmodule Controller do
         {precio, _} = Integer.parse(precio_str)
         Plataforma.ofertar(Plataforma, subasta_name, precio, comprador_name)
         {:ok, [{"Content-type", "application/json"}], "{\"status\":\"ok\"}"}
-    end
-  end
-
-  def handle(:POST, [<<"compradores">>], req) do
-    map = parse_body(req)
-    name = Map.get(map, "name")
-    contacto = Map.get(map, "contacto")
-
-    case {name, contacto} do
-      {nil, _} -> {400, [], "Bad Request"}
-      {_, nil} -> {400, [], "Bad Request"}
-      {name, contacto} ->
-        Plataforma.create_comprador(Plataforma, name, contacto)
-        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
     end
   end
 
