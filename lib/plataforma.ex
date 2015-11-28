@@ -85,6 +85,7 @@ defmodule Plataforma do
         # cerramo la subasta
         {:ok, subasta} = lookup_dets(state.dets, {subasta_name, :subasta})
         notify_subasta_finished(state, subasta)
+        :dets.delete(dets, key)
         {:noreply, state}
       :not_found ->
         {:noreply, state}
@@ -162,7 +163,6 @@ defmodule Plataforma do
   def update_price(dets, name, new_price, offerer) do
     key = {name, :subasta}
     {:ok, subasta} = lookup_dets(dets, key)
-    :dets.delete(dets, key)
     :dets.insert(dets, {key, %{subasta | price: new_price, offerer: offerer}})
   end
 
