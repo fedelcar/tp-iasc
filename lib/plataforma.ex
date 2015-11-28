@@ -47,18 +47,14 @@ defmodule Plataforma do
   end
 
   def handle_cast({:create_comprador, {name, value}}, state) do
-    if state.mode == :primary do
-      key = {name, :comprador}
-      case lookup_dets(state.dets, key) do
-        {:ok, entity} ->
-          {:noreply, state}
-        :not_found ->
-          :dets.insert(state.dets, {key, value})
-          GenEvent.notify(state.event_manager, {:send, {:create_comprador, {name, value}}})
-          {:noreply, state}
-      end
-    else
-      {:noreply, state}
+    key = {name, :comprador}
+    case lookup_dets(state.dets, key) do
+      {:ok, entity} ->
+        {:noreply, state}
+      :not_found ->
+        :dets.insert(state.dets, {key, value})
+        GenEvent.notify(state.event_manager, {:send, {:create_comprador, {name, value}}})
+        {:noreply, state}
     end
   end
 
@@ -129,6 +125,7 @@ defmodule Plataforma do
   end
 
   def handle_cast({:message, message}, state) do
+    IO.inspect message
     GenServer.cast(self, message)
     {:noreply, state}
   end
