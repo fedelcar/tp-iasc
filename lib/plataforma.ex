@@ -161,8 +161,6 @@ defmodule Plataforma do
     {:ok, subasta} = lookup_dets(dets, key)
     :dets.delete(dets, key)
     :dets.insert(dets, {key, %{subasta | price: new_price, offerer: offerer}})
-    IO.puts "%{subasta | price: new_price, offerer: offerer}}"
-    IO.inspect %{subasta | price: new_price, offerer: offerer}
   end
 
   def notify_subastas(state, subasta, value) do
