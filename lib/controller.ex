@@ -6,6 +6,8 @@ defmodule Controller do
     handle(req.method, req.path, req)
   end
 
+  #Subastas endpoint
+
   def handle(:GET, [<<"subastas">>], req) do
     name = req.get_arg("name")
     case Plataforma.lookup_subasta(Plataforma, name) do
@@ -18,17 +20,27 @@ defmodule Controller do
     end
   end
 
-  def handle(:POST, [<<"subastas">>, <<"cancelar">>], req) do
-    map = parse_body(req)
-    name = Map.get(map, "name")
+  def handle(:POST, [<<"subastas">>], req) do
+    case JSON.decode(req.body) do
+      {:ok, %{"name" => name, "base_price" => base_price, "duration" => duration}} ->
+        Plataforma.create_subasta(Plataforma, name, base_price, duration)
+        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
+      _ ->
+        {400, [], "Bad Request"}
+    end
+  end
 
-    if name do
-      Plataforma.cancelar_subasta(Plataforma, name)
-      {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
-    else
+  def handle(:POST, [<<"subastas">>, <<"cancelar">>], req) do
+    case JSON.decode(req.body) do
+      %{"name" => name} ->
+        Plataforma.cancelar_subasta(Plataforma, name)
+        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"cancelled\"}"}
+      _ ->
       {400, [], "Bad Request"}
     end
   end
+
+  #Compradores endpoint
 
   def handle(:GET, [<<"compradores">>], req) do
     name = req.get_arg("name")
@@ -37,24 +49,6 @@ defmodule Controller do
         {:ok, [{"Content-type", "application/json"}], "{\"name\":\"#{comprador.name}\", \"contacto\":\"#{comprador.contacto}\"}"}
       _ ->
         {404, [], "not found"}
-    end
-  end
-
-  def handle(:POST, [<<"subastas">>], req) do
-    map = parse_body(req)
-    name = Map.get(map, "name")
-    base_price_str = Map.get(map, "base_price")
-    duration_str = Map.get(map, "duration")
-
-    case {name, base_price_str, duration_str} do
-      {nil, _, _} -> {400, [], "Bad Request"}
-      {_, nil, _} -> {400, [], "Bad Request"}
-      {_, _, nil} -> {400, [], "Bad Request"}
-      {name, base_price_str, duration_str} ->
-        {duration, _} = Integer.parse(duration_str)
-        {base_price, _} = Integer.parse(base_price_str)
-        Plataforma.create_subasta(Plataforma, name, base_price, duration)
-        {:ok, [{"Content-type", "application/json"}], "{\"status\":\"created\"}"}
     end
   end
 
