@@ -34,14 +34,16 @@ defmodule Escenario3Test do
 
   test "Escenario 3", %{plataforma: plataforma} do
 
+    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 1}
+
     # Se registran los dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     # Nueva subasta y notifiación a todos de la misma
-    Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "arya stark", "se vende heladera"}
-    assert_receive {:new_subasta, "john snow", "se vende heladera"}
+    Plataforma.create_subasta(plataforma, subasta.name, subasta.price, subasta.duration)
+    assert_receive {:new_subasta, "arya stark", subasta}
+    assert_receive {:new_subasta, "john snow", subasta}
 
     # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
@@ -52,8 +54,8 @@ defmodule Escenario3Test do
     :timer.sleep(300)
     Plataforma.cancelar_subasta(plataforma, "se vende heladera")
     assert_receive {:send, {:cancel, "se vende heladera"}} ## Comunicator received for forward
-    assert_receive{:cancel_subasta, "arya stark", "se vende heladera"}
-    assert_receive{:cancel_subasta, "john snow", "se vende heladera"}
+    assert_receive {:cancel_subasta, "arya stark", "se vende heladera"}
+    assert_receive {:cancel_subasta, "john snow", "se vende heladera"}
 
     # Verificamos que la subasta ya no está activa en la plataforma
     assert :not_found = Plataforma.lookup_subasta(plataforma, "se vende heladera")
