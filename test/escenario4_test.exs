@@ -33,14 +33,16 @@ defmodule Escenario4Test do
 # otro participante (A y B, en este caso)
 
   test "Escenario 4", %{plataforma: plataforma} do
+    subasta = %Subasta{name: "se vende heladera", price: 10, duration: 1}
+
     # Se registran los dos compradores
     Plataforma.create_comprador(plataforma, "arya stark", "deathismyfried@gmail.com")
     Plataforma.create_comprador(plataforma, "john snow", "idontknownothing@gmail.com")
 
     # Nueva subasta y notifiación a todos de la misma
-    Plataforma.create_subasta(plataforma, "se vende heladera", 10, 1)
-    assert_receive {:new_subasta, "arya stark", "se vende heladera"}
-    assert_receive {:new_subasta, "john snow", "se vende heladera"}
+    Plataforma.create_subasta(plataforma, subasta.name, subasta.price, subasta.duration)
+    assert_receive {:new_subasta, "arya stark", subasta}
+    assert_receive {:new_subasta, "john snow", subasta}
 
     # Nueva oferta y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 15, "john snow")
@@ -48,8 +50,8 @@ defmodule Escenario4Test do
     assert_receive {:oferta, "arya stark", "se vende heladera", 15, "john snow"}
 
      # Nueva oferta, pero es inferior a la ganadora, por lo que se ignora
-    Plataforma.ofertar(plataforma, "se vende heladera", 10, "arya stark")
-    assert_receive {:offer_too_low, "arya stark"}
+    Plataforma.ofertar(plataforma, subasta.name, 10, "arya stark")
+    assert_receive {:offer_too_low, "arya stark", 10, "se vende heladera"}
 
     # Nueva oferta superior y notificación a todos de la misma
     Plataforma.ofertar(plataforma, "se vende heladera", 200, "arya stark")
@@ -60,7 +62,7 @@ defmodule Escenario4Test do
 
     # Luego de empezada la subasta, un nuevo comprador hace ofertas
     Plataforma.create_comprador(plataforma, "ron damon", "ron_damon@gmail.com")
-    Plataforma.ofertar(plataforma, "se vende heladera", 300, "ron damon")
+    Plataforma.ofertar(plataforma, subasta.name, 300, "ron damon")
     assert_receive {:oferta_aceptada, "ron damon", "se vende heladera", 300}
     assert_receive {:oferta, "arya stark", "se vende heladera", 300, "ron damon"}
     assert_receive {:oferta, "john snow", "se vende heladera", 300, "ron damon"}
@@ -69,9 +71,10 @@ defmodule Escenario4Test do
     :timer.sleep(800)
 
     # Notificacion a los clientes de la subasta finalizada
-    assert_receive {:subasta_finished, "john snow", "se vende heladera"}
-    assert_receive {:subasta_finished, "arya stark", "se vende heladera"}
-    assert_receive {:subasta_finished, "ron damon", "se vende heladera"}
+    subasta_offered = %Subasta{subasta | offerer: "john snow"}
+    assert_receive {:subasta_finished, "john snow",  subasta_offered}
+    assert_receive {:subasta_finished, "arya stark", subasta_offered}
+    assert_receive {:subasta_finished, "ron damon", subasta_offered}
 
     # Corroboramos quién ganó la subasta
     {:ok, subasta} = Plataforma.lookup_subasta(plataforma, "se vende heladera")
