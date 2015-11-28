@@ -85,7 +85,7 @@ defmodule Plataforma do
         # cerramo la subasta
         {:ok, subasta} = lookup_dets(state.dets, {subasta_name, :subasta})
         notify_subasta_finished(state, subasta)
-        :dets.delete(dets, key)
+        :dets.delete(state.dets, key)
         {:noreply, state}
       :not_found ->
         {:noreply, state}

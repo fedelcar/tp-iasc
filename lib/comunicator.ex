@@ -3,7 +3,18 @@ defmodule Comunicator do
 
   def init(name_plataforma) do
     IO.puts "Comunicator started"
-    {:ok, %{plataforma: name_plataforma, connected: false}}
+    case Node.connect(get_node) do
+      true ->
+        IO.puts "conexion exitosa con el node #{get_node}"
+        Node.monitor(get_node, true)
+        {:ok, %{plataforma: name_plataforma, connected: true}}
+      false ->
+        IO.puts "conexion fallida con el node #{get_node}"
+        {:ok, %{plataforma: name_plataforma, connected: false}}
+      :ignored ->
+        IO.puts "conexion ignorada"
+        {:ok, %{plataforma: name_plataforma, connected: false}}
+    end    
   end
 
   def handle_event({:send, mensaje}, state) do
