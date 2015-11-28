@@ -110,7 +110,7 @@ defmodule Plataforma do
       case lookup_dets(state.dets, {name, :subasta}) do
         {:ok, subasta} ->
           if price <= subasta.price do
-            GenEvent.notify(state.event_manager, {:offer_too_low, offerer})
+            GenEvent.notify(state.event_manager, {:offer_too_low, offerer, price, name})
             {:noreply, state}
           else
             update_price(state.dets, name, price, offerer)
@@ -169,7 +169,7 @@ defmodule Plataforma do
         fn(result) ->
           case result do
             [_,comprador] ->
-              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, subasta})
+              GenEvent.notify(state.event_manager, {:new_subasta, comprador.name, value})
               :ok
           end
         end

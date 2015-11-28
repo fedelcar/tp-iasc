@@ -41,7 +41,7 @@ defmodule Comunicator do
   #Handlers
 
   def handle_event({:new_subasta, receptor, subasta}, state) do
-    IO.puts "message to #{receptor}: Se ha creado la subasta #{subasta}"
+    IO.puts "message to #{receptor}: Se ha creado la subasta #{subasta.name} que finaliza en #{subasta.duration} segundos"
     {:ok, state}
   end
 
@@ -52,6 +52,11 @@ defmodule Comunicator do
 
   def handle_event({:oferta_aceptada, receptor, subasta, price}, state) do
     IO.puts "message to #{receptor}: oferta aceptada para la subasta #{subasta} por la cantidad #{price}"
+    {:ok, state}
+  end
+
+  def handle_event({:offer_too_low, receptor, price, subasta}, state) do
+    IO.puts "message to #{receptor}: Tu oferta de #{price} para la subasta #{subasta} es muy baja"
     {:ok, state}
   end
 
