@@ -19,7 +19,7 @@ defmodule Subastas.Mixfile do
       mod = []
     end
     [applications: [:logger],
-     env: [node: :"cris@192.168.5.103", port: 3001, mode: :secondary],
+     env: [node: :"cris@192.168.5.103", port: 3001, mode: :primary],
      mod: mod]
   end
 
