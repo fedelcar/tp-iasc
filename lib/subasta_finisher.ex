@@ -4,7 +4,7 @@ defmodule SubastaFinisher do
   def handle_event({:new_subasta, subasta}, parent) do
     timeout = subasta.duration
     :timer.sleep(timeout * 1000)
-    Plataforma.close_subasta(parent, subasta)
+    Plataforma.close_subasta(parent, subasta.name)
     {:ok, parent}
   end
 

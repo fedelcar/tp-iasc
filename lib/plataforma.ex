@@ -31,8 +31,8 @@ defmodule Plataforma do
     GenServer.cast(server, {:ofertar, {name, price, offerer}})
   end
 
-  def close_subasta(server, subasta) do
-    GenServer.cast(server, {:cerrar, subasta})
+  def close_subasta(server, subasta_name) do
+    GenServer.cast(server, {:cerrar, subasta_name})
   end
 
   def cancelar_subasta(server, name) do
@@ -82,11 +82,12 @@ defmodule Plataforma do
     end
   end
 
-  def handle_cast({:cerrar, subasta}, state) do
-    key = {subasta.name, :subasta}
+  def handle_cast({:cerrar, subasta_name}, state) do
+    key = {subasta_name, :subasta}
     case lookup_dets(state.dets, key) do
       {:ok, entity} ->
         # cerramo la subasta
+        {:ok, subasta} = lookup_dets(state.dets, {subasta_name, :subasta})
         notify_subasta_finished(state.dets, state.event_manager, subasta)
         {:noreply, state}
       :not_found ->
@@ -160,6 +161,8 @@ defmodule Plataforma do
     {:ok, subasta} = lookup_dets(dets, key)
     :dets.delete(dets, key)
     :dets.insert(dets, {key, %{subasta | price: new_price, offerer: offerer}})
+    IO.puts "%{subasta | price: new_price, offerer: offerer}}"
+    IO.inspect %{subasta | price: new_price, offerer: offerer}
   end
 
   def notify_subastas(state, subasta, value) do
@@ -189,7 +192,7 @@ defmodule Plataforma do
         end
       end
     )
-    GenEvent.notify(pid, {:send, {:cerrar, subasta}})
+    GenEvent.notify(pid, {:send, {:cerrar, subasta.name}})
   end
 
   def notify_ofertas(state, subasta, price, offerer) do
